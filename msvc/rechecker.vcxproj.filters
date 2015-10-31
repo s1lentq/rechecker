@@ -1,0 +1,505 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\common\beamdef.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cl_entity.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\com_model.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\con_nprint.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\const.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\crc.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cvardef.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\demo_api.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\director_cmds.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\dlight.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\dll_state.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\entity_state.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\entity_types.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\enums.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\event_api.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\event_args.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\event_flags.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\hltv.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\IGameServerData.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\in_buttons.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ivoicetweak.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\kbutton.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\mathlib.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\net_api.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\netadr.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\nowin.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\parsemsg.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\particledef.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pmtrace.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\port.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\qfont.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\quakedef.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\r_efx.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\r_studioint.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ref_params.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\screenfade.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Sequence.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\SteamCommon.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\studio_event.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\triangleapi.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\usercmd.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\vmodes.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\weaponinfo.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\winsani_in.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\winsani_out.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\activity.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\activitymap.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\animation.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\basemonster.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\cbase.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\cdll_dll.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\client.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\decals.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\doors.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\effects.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\enginecallback.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\explode.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\extdll.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\func_break.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\game.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\gamerules.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\hornet.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\items.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\maprules.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\monsterevent.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\monsters.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\nodes.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\plane.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\player.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\saverestore.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\schedule.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\scriptevent.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\skill.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\soundent.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\spectator.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\talkmonster.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\teamplay_gamerules.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\trains.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\util.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\vector.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlls\weapons.h">
+      <Filter>sdk\dlls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\archtypes.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\bspfile.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\cmd_rehlds.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\common_rehlds.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\crc32c.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\custom.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\customentity.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\d_local.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\edict.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\eiface.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\FlightRecorder.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\hookchains.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\keydefs.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\maintypes.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\model.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\modelgen.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\osconfig.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\progdefs.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\progs.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\rehlds_api.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\rehlds_interfaces.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\Sequence.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\shake.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\spritegn.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\static_map.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\studio.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\sys_shared.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\userid_rehlds.h">
+      <Filter>sdk\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\api_info.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\commands_meta.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\conf_meta.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\dllapi.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\engine_api.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\engine_t.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\enginecallbacks.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\engineinfo.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\game_support.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\games.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\h_export.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\info_name.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\linkent.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\log_meta.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\meta_api.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\meta_eiface.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\metamod.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\mhook.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\mlist.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\mplayer.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\mplugin.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\mqueue.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\mreg.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\mutil.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\osdep.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\plinfo.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\reg_support.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\sdk_util.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\studioapi.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\support_meta.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\thread_logparse.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\tqueue.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\types_meta.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\vdate.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod\vers_meta.h">
+      <Filter>sdk\metamod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pm_shared\pm_debug.h">
+      <Filter>sdk\pm_shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pm_shared\pm_defs.h">
+      <Filter>sdk\pm_shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pm_shared\pm_info.h">
+      <Filter>sdk\pm_shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pm_shared\pm_materials.h">
+      <Filter>sdk\pm_shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pm_shared\pm_movevars.h">
+      <Filter>sdk\pm_shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pm_shared\pm_shared.h">
+      <Filter>sdk\pm_shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\FileSystem.h">
+      <Filter>sdk\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\interface.h">
+      <Filter>sdk\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\main.h" />
+    <ClInclude Include="..\src\precompiled.h" />
+    <ClInclude Include="..\src\engine_rehlds.h" />
+    <ClInclude Include="..\src\config.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\common\parsemsg.cpp">
+      <Filter>sdk\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\interface.cpp">
+      <Filter>sdk\public</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dllapi.cpp" />
+    <ClCompile Include="..\src\engine_api.cpp" />
+    <ClCompile Include="..\src\engine_rehlds.cpp" />
+    <ClCompile Include="..\src\h_export.cpp" />
+    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\meta_api.cpp" />
+    <ClCompile Include="..\src\precompiled.cpp" />
+    <ClCompile Include="..\src\sdk_util.cpp" />
+    <ClCompile Include="..\src\config.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="sdk">
+      <UniqueIdentifier>{d0f7e04a-4123-4c8c-8c29-420624c30a2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdk\pm_shared">
+      <UniqueIdentifier>{7b0a9e77-3eeb-426d-ae2a-35efa6496ef2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdk\public">
+      <UniqueIdentifier>{9d44effa-6957-4428-a40e-d9393edc4406}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdk\metamod">
+      <UniqueIdentifier>{d2eedb0e-5f28-40b5-9250-46df6d885fc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdk\common">
+      <UniqueIdentifier>{a87eb74b-1d58-4457-aefe-f9e62fbece05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdk\dlls">
+      <UniqueIdentifier>{7be5f6e9-8304-446f-b67e-6bd6367b0f3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdk\engine">
+      <UniqueIdentifier>{1bb5b890-a282-419e-912a-26d9d8fccf5b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
