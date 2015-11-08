@@ -1,106 +1,88 @@
 #include "precompiled.h"
 
-cvar_t *mp_consistency = NULL;
 bool g_bInitialized = false;
+bool SV_CheckConsistencyResponce(IRehldsHook_SV_CheckConsistencyResponce *chain, IGameClient *pSenderClient, resource_t *resource, uint32 hash);
+void (*SV_AddResource)(resourcetype_t type, const char *name, int size, unsigned char flags, int index);
 
-void SV_GenericFileConsistencyResponce(IRehldsHook_GenericFileConsistencyResponce *chain, IGameClient *pSenderClient, resource_t *resource, uint32 hash);
+bool OnMetaAttach(void)
+{
+	if (RehldsApi_Init() != RETURN_LOAD) {
+		return false;
+	}
+
+	// register function from ReHLDS API
+	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponce()->registerHook(&SV_CheckConsistencyResponce);
+	SV_AddResource = reinterpret_cast<void (*)(resourcetype_t, const char *, int, unsigned char, int)>(g_RehldsApi->GetFuncs()->SV_AddResource);
+
+	// initialize config
+	Config.Init();
+
+	// if is OK go to attach
+	return Config.IsConfigLoaded();
+}
 
 void OnMetaDetach(void)
 {
-	g_RehldsApi->GetHookchains()->GenericFileConsistencyResponce()->unregisterHook(&SV_GenericFileConsistencyResponce);
+	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponce()->unregisterHook(&SV_CheckConsistencyResponce);
+	
+	// clear
+	CmdExec.Clear();
+	Config.ClearResources();
+}
+
+void ServerDeactivate_Post()
+{
+	if (g_bInitialized) {
+		// clear
+		CmdExec.Clear();
+		Config.ClearResources();
+		g_bInitialized = false;
+	}
+
+	SET_META_RESULT(MRES_IGNORED);
 }
 
 void ServerActivate_Post(edict_t *pEdictList, int edictCount, int clientMax)
 {
-	g_bInitialized = false;
+	Config.Load();
 	SET_META_RESULT(MRES_IGNORED);
 }
 
-qboolean ClientConnect_Post(edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ])
+void ClientPutInServer_Post(edict_t *pEntity)
 {
-	if (g_bInitialized)
-	{
-		SET_META_RESULT(MRES_IGNORED);
-		return META_RESULT_ORIG_RET(qboolean);
+	int nIndex = ENTINDEX(pEntity) - 1;
+
+	if (nIndex < 0 || nIndex >= gpGlobals->maxClients) {
+		RETURN_META(MRES_IGNORED);
 	}
 
-	g_bInitialized = true;
-	resource_t *resource = g_RehldsSv->GetResourceList();
+	IGameClient *pClient = g_RehldsApi->GetServerStatic()->GetClient(nIndex);
 
-	int iNumResources = g_RehldsSv->GetNumResources();
-	int iNumConsistency = g_RehldsSv->GetNumConsistency();
+	if (pClient != NULL) {
+		// client is connected to putinserver, go execute cmd out buffer
+		CmdExec.Exec(pClient);
+	}
 
-	if (iNumResources < 1280)
-	{
-		ResourceCheckerVectorIt it = Config.GetVector()->begin();
-		while (it != Config.GetVector()->end())
-		{
-			strncpy(resource[iNumResources].szFileName, (*it)->m_FileName, 63);
-			resource[iNumResources].szFileName[63] = '\0';
+	SET_META_RESULT(MRES_IGNORED);
+}
 
-			resource[iNumResources].type = t_decal;
-			resource[iNumResources].nDownloadSize = 0;
-			resource[iNumResources].nIndex = 4095;
-			resource[iNumResources].ucFlags = RES_CHECKFILE;
-
-			iNumResources++;
-			iNumConsistency++;
-
-			g_RehldsSv->SetNumResources(iNumResources);
-			g_RehldsSv->SetNumConsistency(iNumConsistency);
-
-			++it;
-		}
+qboolean ClientConnect_Post(edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[128])
+{
+	if (!g_bInitialized) {
+		Config.AddResource();
+		g_bInitialized = true;
 	}
 
 	SET_META_RESULT(MRES_IGNORED);
 	return META_RESULT_ORIG_RET(qboolean);
 }
 
-void SV_GenericFileConsistencyResponce(IRehldsHook_GenericFileConsistencyResponce *chain, IGameClient *pSenderClient, resource_t *resource, uint32 hash)
+bool SV_CheckConsistencyResponce(IRehldsHook_SV_CheckConsistencyResponce *chain, IGameClient *pSenderClient, resource_t *resource, uint32 hash)
 {
-	if (resource->type != t_decal)
-	{
-		chain->callNext(pSenderClient, resource, hash);
-		return;
+	if (resource->type == t_decal) {
+		if (!Config.FileConsistencyResponce(pSenderClient, resource, hash))
+			return false;
 	}
 
-	*(uint32 *)&resource->rgucMD5_hash[0] = hash;
-
-	int i = 0;
-	for (ResourceCheckerVectorIt it = Config.GetVector()->begin(); it != Config.GetVector()->end(); ++it, i++)
-	{
-		CResourceCheckerNew *pnew = (*it);
-
-		if (strcmp(resource->szFileName, pnew->m_FileName) == 0)// && pnew->m_HashFile == hash)
-		{
-#ifdef _DEBUG
-			printf("filename: %s (%s) | hash: %x | response hash: %x\n", resource->szFileName, pnew->m_FileName, pnew->m_HashFile, hash);
-#endif // _DEBUG
-			break;
-		}
-	}
-}
-
-bool OnMetaAttach(void)
-{
-	if (RehldsApi_Init() != RETURN_LOAD)
-		return false;
-
-	cvar_t *oldCvar = g_engfuncs.pfnCVarGetPointer("mp_consistency");
-	cvar_t newCvar = { "mp_consistency", oldCvar->string, oldCvar->flags, oldCvar->value, NULL };
-
-	oldCvar->name = "_mp_consistency";
-
-	g_engfuncs.pfnCVarRegister(&newCvar);
-	g_engfuncs.pfnCvar_DirectSet(oldCvar, "1");
-	mp_consistency = g_engfuncs.pfnCVarGetPointer("mp_consistency");
-
-	// register function from ReHLDS API
-	g_RehldsApi->GetHookchains()->GenericFileConsistencyResponce()->registerHook(&SV_GenericFileConsistencyResponce);
-
-	// initialize config
-	Config.Init();
-
-	return true;
+	return chain->callNext(pSenderClient, resource, hash);;
 }

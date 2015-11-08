@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef _WIN32 // WINDOWS
+	#pragma warning(disable : 4005)
+#endif // _WIN32
+
+#include <cstring>		// strrchr
+
 #include <extdll.h>
 #include <enginecallback.h>		// ALERT()
 
@@ -11,6 +17,7 @@
 
 #include "main.h"
 #include "config.h"
+#include "cmdexec.h"
 #include "sdk_util.h"		// UTIL_LogPrintf, etc
 
 /* <7508> ../engine/consistency.h:9 */

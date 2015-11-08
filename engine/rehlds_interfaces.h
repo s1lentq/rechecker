@@ -90,18 +90,6 @@ public:
 struct client_t;
 #endif
 
-class IRehldsServer {
-public:
-	virtual ~IRehldsServer() { }
-	
-	virtual int GetNumResources() = 0;
-	virtual int GetNumConsistency() = 0;
-	virtual void SetNumConsistency(int iValue) = 0;
-	virtual void SetNumResources(int iValue) = 0;
-	virtual resource_t *GetResourceList() = 0;
-	virtual struct consistency_s *GetConsistencyList() = 0;
-};
-
 class IRehldsServerStatic {
 public:
 	virtual ~IRehldsServerStatic() { }
@@ -125,4 +113,6 @@ public:
 	virtual sizebuf_t* GetReliableDatagram() = 0;
 
 	virtual void SetModelName(const char* modelname) = 0;
+	virtual void SetConsistencyNum(int num) = 0;
+	virtual int GetConsistencyNum() = 0;
 };

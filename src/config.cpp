@@ -2,6 +2,38 @@
 
 CConfig Config;
 
+void CConfig::AddResource()
+{
+	ResourceCheckerVectorIt it = m_vector.begin();
+	int nConsistency = g_RehldsServerData->GetConsistencyNum();
+
+	while (it != m_vector.end())
+	{
+		CResourceCheckerNew *pRes = (*it);
+
+		// prevent duplicate of filenames
+		// check if filename is been marked so do not add the resource again
+		if (pRes->GetMark() != true) {
+#ifdef _DEBUG
+			printf(__FUNCTION__ " :: (%s)(%s)\n", pRes->GetFileName(), pRes->GetCmdExec());
+#endif // _DEBUG
+			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, 4095);
+			nConsistency++;
+		}
+
+		it++;
+	}
+	g_RehldsServerData->SetConsistencyNum(nConsistency);
+}
+
+void CConfig::ClearResources()
+{
+	m_PreHash = 0;
+
+	// clear resources
+	m_vector.clear();
+}
+
 void CConfig::Init()
 {
 	char *pos;
@@ -22,8 +54,11 @@ void CConfig::Init()
 
 	// resources.ini
 	snprintf(m_szPathResourcesDir, sizeof(m_szPathResourcesDir) - 1, "%s" FILE_INI_RESOURCES, path);
+}
 
-	ParseConfig();
+void CConfig::Load()
+{
+	//ParseConfig();
 	ParseResources();
 }
 
@@ -33,7 +68,8 @@ void CConfig::ParseConfig()
 
 	if (fp == NULL)
 	{
-		UTIL_LogPrintf(__FUNCTION__ ": can't find path to " FILE_INI_CONFIG);
+		UTIL_Printf(__FUNCTION__ ": can't find path to " FILE_INI_CONFIG "\n");
+		return;
 	}
 
 	// soon coming..
@@ -47,6 +83,50 @@ inline uint8 hexbyte(uint8 *hex)
 		| (hex[1] > '9' ? toupper(hex[1]) - 'A' + 10 : hex[1] - '0');
 }
 
+inline bool invalidchar(const char c)
+{
+	// to check for invalid characters
+	return (c == '\\' || c == '/' || c == ':'
+		|| c == '*' || c == '?'
+		|| c == '"' || c == '<'
+		|| c == '>' || c == '|') != 0;
+}
+
+bool FileIsValidChar(char *psrc, char &pchar) {
+
+	char *pch = strrchr(psrc, '/');
+
+	if (pch == NULL) {
+		pch = psrc;
+	}
+
+	while (*pch++) {
+		if (invalidchar(*pch)) {
+			pchar = *pch;
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool FileIsExtension(char *psrc) {
+
+	// find the extension filename
+	char *pch = strrchr(psrc, '.');
+
+	if (pch == NULL) {
+		return false;
+	}
+
+	// the size extension
+	if (strlen(&pch[1]) <= 0) {
+		return false;
+	}
+
+	return strchr(pch, '/') == NULL;
+}
+
 void CConfig::ParseResources()
 {
 	char *pos;
@@ -54,23 +134,26 @@ void CConfig::ParseResources()
 	uint8 hash[16];
 	FILE *fp;
 	int argc;
-	flag_type_resources flags = FLAG_TYPE_NONE;
+	int len;
+	flag_type_resources flag = FLAG_TYPE_NONE;
 	char filename[MAX_PATH_LENGTH];
-	char cmdPunish[MAX_PATH_LENGTH];
+	char cmdBufExec[MAX_PATH_LENGTH];
+	int cline = 0;
 
 	fp = fopen(m_szPathResourcesDir, "r");
 
 	if (fp == NULL)
 	{
-		UTIL_LogPrintf(__FUNCTION__ ": can't find path to " FILE_INI_RESOURCES);
+		m_ConfigFailed = false;
+		UTIL_Printf(__FUNCTION__ ": can't find path to " FILE_INI_RESOURCES "\n");
 		return;
 	}
 
 	while (!feof(fp) && fgets(buffer, sizeof(buffer) - 1, fp))
 	{
-		pos = &buffer[0];
+		pos = buffer;
 
-		// TrimSpace(pos);
+		cline++;
 
 		if (*pos == '\0' || *pos == ';' || *pos == '\\' || *pos == '/' || *pos == '#')
 			continue;
@@ -78,44 +161,48 @@ void CConfig::ParseResources()
 		const char *pToken = GetNextToken(&pos);
 
 		argc = 0;
-		memset(hash, 0, sizeof(hash));
-
+		hash[0] = '\0';
+		flag = FLAG_TYPE_NONE;
+		
 		while (pToken != NULL && argc <= MAX_PARSE_ARGUMENT)
 		{
-			int iLen = strlen(pToken);
+			len = strlen(pToken);
 
 			switch (argc)
 			{
 			case ARG_TYPE_FILE_NAME:
 			{
-				strncpy(filename, pToken, iLen + 1);
-				filename[iLen + 1] = '\0';
+				strncpy(filename, pToken, len + 1);
+				filename[len + 1] = '\0';
 				break;
 			}
 			case ARG_TYPE_FILE_HASH:
 			{
 				uint8 pbuf[33];
 
-				strncpy((char *)pbuf, pToken, iLen);
-				pbuf[iLen] = '\0';
+				strncpy((char *)pbuf, pToken, len);
+				pbuf[len] = '\0';
 
-				for (int i = 0; i < sizeof(pbuf) / 2; i++)
-					hash[i] = hexbyte(&pbuf[i * 2]);
+				if (_stricmp((const char *)pbuf, "UNKNOWN") == 0) {
+					flag = FLAG_TYPE_HASH_ANY;
+				}
+				else
+				{
+					for (int i = 0; i < sizeof(pbuf) / 2; i++)
+						hash[i] = hexbyte(&pbuf[i * 2]);
+
+					flag = (*(uint32 *)&hash[0] != 0x00000000) ? FLAG_TYPE_EXISTS : FLAG_TYPE_MISSGIN;
+				}
 
 				break;
 			}
-			case ARG_TYPE_CMD_PUNISH:
+			case ARG_TYPE_CMD_EXEC:
 			{
-				strncpy(cmdPunish, pToken, iLen + 1);
-				cmdPunish[iLen + 1] = '\0';
+				strncpy(cmdBufExec, pToken, len + 1);
+				cmdBufExec[len + 1] = '\0';
 
 				// replface \' to "
-				StringReplace(cmdPunish, "'", "\"");
-				break;
-			}
-			case ARG_TYPE_FILE_FLAGS:
-			{
-				// TODO: Implement me flags
+				StringReplace(cmdBufExec, "'", "\"");
 				break;
 			}
 			default:
@@ -127,7 +214,34 @@ void CConfig::ParseResources()
 		}
 
 		if (argc >= MAX_PARSE_ARGUMENT) {
-			AddElement(filename, cmdPunish, flags, *(uint32 *)&hash[0]);
+
+			char pchar;
+			if (strlen(filename) <= 0) {
+				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; path to filename is empty on line %d\n", cline);
+				continue;
+			}
+
+			else if (!FileIsExtension(filename)) {
+				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; filename has no extension on line %d\n", cline);
+				continue;
+			}
+
+			else if (!FileIsValidChar(filename, pchar)) {
+				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; filename has invalid character '%c' on line %d\n", pchar, cline);
+				continue;
+			}
+
+			else if (flag == FLAG_TYPE_NONE) {
+				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing hash failed on line %d\n", cline);
+				continue;
+			}
+
+			else if (strlen(cmdBufExec) <= 0) {
+				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; command line is empty on line %d\n", cline);
+				continue;
+			}
+
+			AddElement(filename, cmdBufExec, flag, *(uint32 *)&hash[0]);
 		}
 	}
 
@@ -140,7 +254,7 @@ const char *CConfig::GetNextToken(char **pbuf)
 	if (*rpos == '\0')
 		return NULL;
 
-	//skip spaces at the beginning
+	// skip spaces at the beginning
 	while (*rpos != 0 && isspace(*rpos))
 		rpos++;
 
@@ -197,7 +311,7 @@ const char *CConfig::GetNextToken(char **pbuf)
 	return res;
 }
 
-void CConfig::TrimSpace(char *pbuf)
+void TrimSpace(char *pbuf)
 {
 	char *pend = pbuf;
 	char *pstart = pbuf;
@@ -226,65 +340,91 @@ void CConfig::TrimSpace(char *pbuf)
 		*pend = '\0';
 }
 
-void CConfig::AddElement(char *filename, char *cmdPunish, flag_type_resources flags, uint32 hash)
+void CConfig::AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash)
 {
-	m_vector.push_back(new CResourceCheckerNew(filename, cmdPunish, flags, hash));
-}
+	m_vector.push_back(new CResourceCheckerNew(filename, cmdExec, flag, hash));
 
-char *CConfig::CommandPunishment(IGameClient *pClient, const char *src)
-{
-	char szIp[16];
-	edict_t *pEdict;
-	const netadr_t *net;
-	static char string[256];
-
-	strncpy(string, src, sizeof(string) - 1);
-	string[sizeof(string) - 1] = '\0';
-
-	pEdict = pClient->GetEdict();
-	net = pClient->GetNetChan()->GetRemoteAdr();
-	snprintf(szIp, sizeof(szIp), "%i.%i.%i.%i", net->ip[0], net->ip[1], net->ip[2], net->ip[3]);
-
-	// replace of templates punishment
-	StringReplace(string, "[name]", STRING(pEdict->v.netname));
-	StringReplace(string, "[userid]", UTIL_VarArgs("%u", g_engfuncs.pfnGetPlayerUserId(pEdict)));
-	StringReplace(string, "[steamid]", UTIL_VarArgs("%s", g_engfuncs.pfnGetPlayerAuthId(pEdict)));
-	StringReplace(string, "[ip]", szIp);
-
-	//SERVER_COMMAND(UTIL_VarArgs("%s\n", string));
-	return string;
-}
-
-void CConfig::StringReplace(char *src, const char *strold, const char *strnew)
-{
-	char *p = src;
-	int oldLen = strlen(strold), newLen = strlen(strnew);
-
-	while ((p = strstr(p, strold)) != NULL)
+	// to mark files which are not required to add to the resource again
+	for (ResourceCheckerVectorIt it = m_vector.begin(); it != m_vector.end(); ++it)
 	{
-		if (oldLen != newLen)
-			memmove(p + newLen, p + oldLen, strlen(p) - oldLen + 1);
+		CResourceCheckerNew *pRes = (*it);
 
-		memcpy(p, strnew, newLen);
-		p += newLen;
+		// do not check the last element
+		if (pRes == m_vector.back())
+			continue;
+
+		if (_stricmp(pRes->GetFileName(), filename) == 0) {
+			// set be marked
+			pRes->SetMark();
+		}
 	}
 }
 
-CResourceCheckerNew::CResourceCheckerNew(char *filename, char *cmdPunish, flag_type_resources flags, uint32 hash)
+bool CConfig::FileConsistencyResponce(IGameClient *pSenderClient, resource_t *resource, uint32 hash)
+{
+	bool bCheckeFiles = false;
+	find_type_e typeFind = FIND_TYPE_NONE;
+
+	for (ResourceCheckerVectorIt it = m_vector.begin(); it != m_vector.end(); ++it)
+	{
+		CResourceCheckerNew *pRes = (*it);
+
+		if (strcmp(resource->szFileName, pRes->GetFileName()) != 0)
+			continue;
+
+		bCheckeFiles = true;
+
+		switch (pRes->GetFlagFile())
+		{
+		case FLAG_TYPE_EXISTS:
+			if (m_PreHash != hash && pRes->GetHashFile() == hash) {
+				typeFind = FIND_TYPE_ON_HASH;
+			}
+			break;
+		case FLAG_TYPE_MISSGIN:
+			if (m_PreHash == hash) {
+				typeFind = FIND_TYPE_MISSING;
+			}
+			break;
+		case FLAG_TYPE_HASH_ANY:
+			if (m_PreHash != hash) {
+				typeFind = FIND_TYPE_ANY_HASH;
+			}
+			break;
+		default:
+			typeFind = FIND_TYPE_NONE;
+			break;
+		}
+
+		if (typeFind != FIND_TYPE_NONE) {
+			// push exec cmd
+			CmdExec.AddElement(pSenderClient, pRes);
+#ifdef _DEBUG
+			printf("* (%s)(%s)(%x)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetHashFile());
+#endif // _DEBUG
+		}
+	}
+
+	m_PreHash = hash;
+	return !bCheckeFiles;
+}
+
+CResourceCheckerNew::CResourceCheckerNew(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash)
 {
 	int iLenFile = strlen(filename);
-	int iLenPunish = strlen(cmdPunish);
+	int iLenExec = strlen(cmdExec);
 
 	m_FileName = new char[iLenFile + 1];
-	m_Punishment = new char[iLenPunish + 1];
+	m_CmdExec = new char[iLenExec + 1];
 	
 	strncpy(m_FileName, filename, iLenFile);
-	strncpy(m_Punishment, cmdPunish, iLenPunish);
+	strncpy(m_CmdExec, cmdExec, iLenExec);
 
 	m_FileName[iLenFile] = '\0';
-	m_Punishment[iLenPunish] = '\0';
+	m_CmdExec[iLenExec] = '\0';
+	m_Mark = false;
 
-	m_Flags = flags;
+	m_Flag = flag;
 	m_HashFile = hash;
 }
 
@@ -292,5 +432,5 @@ CResourceCheckerNew::~CResourceCheckerNew()
 {
 	// free me
 	delete[] m_FileName,
-		m_Punishment;
+		m_CmdExec;
 }

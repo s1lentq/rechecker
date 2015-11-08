@@ -163,6 +163,7 @@
     <ClInclude Include="..\pm_shared\pm_shared.h" />
     <ClInclude Include="..\public\FileSystem.h" />
     <ClInclude Include="..\public\interface.h" />
+    <ClInclude Include="..\src\cmdexec.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\engine_rehlds.h" />
     <ClInclude Include="..\src\main.h" />
@@ -173,6 +174,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\public\interface.cpp" />
+    <ClCompile Include="..\src\cmdexec.cpp" />
     <ClCompile Include="..\src\config.cpp" />
     <ClCompile Include="..\src\dllapi.cpp" />
     <ClCompile Include="..\src\engine_api.cpp" />

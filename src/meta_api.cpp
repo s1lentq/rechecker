@@ -9,8 +9,8 @@ plugin_info_t Plugin_info =
 	"s1lent",
 	"http://www.dedicated-server.ru/",
 	"ReChecker",
-	PT_ANYTIME,
-	PT_ANYTIME,
+	PT_STARTUP,
+	PT_NEVER,
 };
 
 meta_globals_t *gpMetaGlobals;
@@ -42,8 +42,10 @@ C_DLLEXPORT int Meta_Attach(PLUG_LOADTIME now,META_FUNCTIONS *pFunctionTable,met
 	{
 		return 0;
 	}
-
+	
+	gMetaFunctionTable.pfnGetEntityAPI2 = GetEntityAPI2;
 	gMetaFunctionTable.pfnGetEntityAPI2_Post = GetEntityAPI2_Post;
+
 	memcpy(pFunctionTable, &gMetaFunctionTable, sizeof(META_FUNCTIONS));
 
 	return 1;
