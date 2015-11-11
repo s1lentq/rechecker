@@ -8,6 +8,7 @@
 	#undef __FUNCTION__
 #endif // _WIN32
 
+#include <list>
 #include <vector>
 #include <cstring>		// strrchr
 

@@ -39,28 +39,27 @@ class CResourceBuffer
 {
 public:
 	CResourceBuffer(char *filename, char *cmdExec, int flags, uint32 hash);
-	~CResourceBuffer();
 
-	uint32 GetHashFile() const { return m_HashFile; };
-	int GetFlagsFile() const { return m_Flags; };
+	uint32 GetFileHash() const { return m_FileHash; };
+	int GetFileFlags() const { return m_Flags; };
 
-	char *GetFileName() const { return m_FileName; };
-	char *GetCmdExec() const { return m_CmdExec; };
+	const char *GetFileName() const { return m_FileName; };
+	const char *GetCmdExec() const { return m_CmdExec; };
 
 	bool GetBreak() const { return m_Break; };
 	void SetBreak() { m_Break = true; };
 
-	bool GetMark() const { return m_Mark; };
-	void SetMark() { m_Mark = true; };
+	bool IsDuplicate() const { return m_Duplicate; };
+	void SetDuplicate() { m_Duplicate = true; };
 
 private:
-	uint32 m_HashFile;
+	uint32 m_FileHash;
 
 	int m_Flags;
 
-	char *m_FileName;
-	char *m_CmdExec;
-	bool m_Mark;
+	const char *m_FileName;
+	const char *m_CmdExec;
+	bool m_Duplicate;
 	bool m_Break;
 };
 
@@ -93,3 +92,4 @@ private:
 
 extern CResourceFile Resource;
 
+void ClearStringsCache();

@@ -6,7 +6,7 @@ CBufExec::CBufExec(IGameClient *pClient, CResourceBuffer *pResource, uint32 resp
 {
 	m_pClient = pClient;
 	m_pResource = pResource;
-	m_Hash = responseHash;
+	m_ClientHash = responseHash;
 }
 
 CBufExec::~CBufExec()
@@ -92,7 +92,7 @@ void CExecManager::CommandExecute(IGameClient *pClient)
 			break;
 		}
 
-		char *cmdExec = GetExecCmdPrepare(pClient, pRes, pExec->GetHash());
+		char *cmdExec = GetExecCmdPrepare(pClient, pRes, pExec->GetClientHash());
 
 		// erase all cmdexec because have flag is break
 		if (bBreak) {
@@ -113,7 +113,7 @@ void CExecManager::CommandExecute(IGameClient *pClient)
 		else
 			iter++;
 
-		bBreak = (pRes->GetFlagsFile() & FLAG_TYPE_BREAK) == FLAG_TYPE_BREAK;
+		bBreak = (pRes->GetFileFlags() & FLAG_TYPE_BREAK) == FLAG_TYPE_BREAK;
 	}
 }
 

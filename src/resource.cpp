@@ -1,6 +1,7 @@
 #include "precompiled.h"
 
 CResourceFile Resource;
+std::vector<const char *> StringsCache;
 
 void CResourceFile::Add()
 {
@@ -12,10 +13,10 @@ void CResourceFile::Add()
 
 		// prevent duplicate of filenames
 		// check if filename is been marked so do not add the resource again
-		if (pRes->GetMark() != true) {
+		if (!pRes->IsDuplicate()) {
 //#ifdef _DEBUG
 			if (CVAR_GET_FLOAT("developer") == 1.0f) {
-				UTIL_Printf(__FUNCTION__ " :: (%s)(%s)(%x)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetHashFile());
+				UTIL_Printf(__FUNCTION__ " :: (%s)(%s)(%x)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetFileHash());
 			}
 //#endif // _DEBUG
 			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, 4095);
@@ -32,6 +33,8 @@ void CResourceFile::Clear()
 
 	// clear resources
 	m_resourceList.clear();
+
+	ClearStringsCache();
 }
 
 void CResourceFile::Init()
@@ -50,7 +53,7 @@ void CResourceFile::Init()
 	*(pos + 1) = '\0';
 
 	// resources.ini
-	snprintf(m_PathDir, sizeof(m_PathDir) - 1, "%s" FILE_INI_RESOURCES, path);
+	snprintf(m_PathDir, sizeof(m_PathDir), "%s" FILE_INI_RESOURCES, path);
 }
 
 inline uint8 hexbyte(uint8 *hex)
@@ -86,7 +89,7 @@ bool IsValidFilename(char *psrc, char &pchar) {
 	return true;
 }
 
-bool FileIsExtension(char *psrc) {
+bool IsFileHasExtension(char *psrc) {
 
 	// find the extension filename
 	char *pch = strrchr(psrc, '.');
@@ -120,12 +123,12 @@ void CResourceFile::Load()
 
 	if (fp == NULL)
 	{
-		m_ConfigFailed = false;
+		m_ConfigFailed = true;
 		UTIL_Printf(__FUNCTION__ ": can't find path to " FILE_INI_RESOURCES "\n");
 		return;
 	}
 
-	while (!feof(fp) && fgets(buffer, sizeof(buffer) - 1, fp))
+	while (!feof(fp) && fgets(buffer, sizeof(buffer), fp))
 	{
 		pos = buffer;
 
@@ -222,7 +225,7 @@ void CResourceFile::Load()
 				continue;
 			}
 
-			else if (!FileIsExtension(filename)) {
+			else if (!IsFileHasExtension(filename)) {
 				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; filename has no extension on line %d\n", cline);
 				continue;
 			}
@@ -251,6 +254,7 @@ void CResourceFile::Load()
 	}
 
 	fclose(fp);
+	m_ConfigFailed = false;
 }
 
 const char *CResourceFile::GetNextToken(char **pbuf)
@@ -347,27 +351,26 @@ void TrimSpace(char *pbuf)
 
 void CResourceFile::AddElement(char *filename, char *cmdExec, int flags, uint32 hash)
 {
-	m_resourceList.push_back(new CResourceBuffer(filename, cmdExec, flags, hash));
+	auto nRes = new CResourceBuffer(filename, cmdExec, flags, hash);
 
 	// to mark files which are not required to add to the resource again
 	for (auto iter = m_resourceList.cbegin(); iter != m_resourceList.cend(); ++iter)
 	{
 		CResourceBuffer *pRes = (*iter);
 
-		// do not check the last element
-		if (pRes == m_resourceList.back())
-			continue;
-
 		if (_stricmp(pRes->GetFileName(), filename) == 0) {
-			// set be marked
-			pRes->SetMark();
+			// resource name already registered
+			nRes->SetDuplicate();
+			break;
 		}
 	}
+
+	m_resourceList.push_back(nRes);
 }
 
 bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource_t *resource, uint32 hash)
 {
-	bool bCheckeFiles = false;
+	bool bHandled = false;
 	find_type_e typeFind = FIND_TYPE_NONE;
 	std::vector<CResourceBuffer *> tempResourceList;
 
@@ -378,9 +381,9 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 		if (strcmp(resource->szFileName, pRes->GetFileName()) != 0)
 			continue;
 
-		bCheckeFiles = true;
+		bHandled = true;
 
-		int flags = pRes->GetFlagsFile();
+		int flags = pRes->GetFileFlags();
 
 		if (flags & FLAG_TYPE_IGNORE)
 		{
@@ -391,7 +394,7 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 		}
 		else if (flags & FLAG_TYPE_EXISTS)
 		{
-			if (m_PrevHash != hash && pRes->GetHashFile() == hash) {
+			if (m_PrevHash != hash && pRes->GetFileHash() == hash) {
 				typeFind = FIND_TYPE_ON_HASH;
 			}
 		}
@@ -414,7 +417,7 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 						continue;
 					}
 
-					if (pTemp->GetHashFile() == hash) {
+					if (pTemp->GetFileHash() == hash) {
 						typeFind = FIND_TYPE_NONE;
 						break;
 					}
@@ -431,39 +434,42 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 
 //#ifdef _DEBUG
 			if (CVAR_GET_FLOAT("developer") == 1.0f) {
-				UTIL_Printf("  -> filename: (%s), cmdexec: (%s), hash: (%x)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetHashFile());
+				UTIL_Printf("  -> filename: (%s), cmdexec: (%s), hash: (%x)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetFileHash());
 			}
 //#endif // _DEBUG
 		}
 	}
 
 	m_PrevHash = hash;
-	return !bCheckeFiles;
+	return !bHandled;
+}
+
+const char* DuplicateString(const char* str)
+{
+	for (auto it = StringsCache.begin(), end = StringsCache.end(); it != end; ++it)
+	{
+		if (!strcmp(*it, str))
+			return *it;
+	}
+
+	const char* s = strcpy(new char[strlen(str) + 1], str);
+	StringsCache.push_back(s);
+	return s;
+}
+
+void ClearStringsCache()
+{
+	for (auto it = StringsCache.begin(), end = StringsCache.end(); it != end; ++it)
+		delete *it;
 }
 
 CResourceBuffer::CResourceBuffer(char *filename, char *cmdExec, int flags, uint32 hash)
 {
-	int lenFile = strlen(filename);
-	int lenExec = strlen(cmdExec);
+	m_FileName = DuplicateString(filename);
+	m_CmdExec = DuplicateString(cmdExec);
 
-	m_FileName = new char[lenFile + 1];
-	m_CmdExec = new char[lenExec + 1];
-
-	strncpy(m_FileName, filename, lenFile);
-	strncpy(m_CmdExec, cmdExec, lenExec);
-
-	m_FileName[lenFile] = '\0';
-	m_CmdExec[lenExec] = '\0';
-
-	m_Mark = false;
+	m_Duplicate = false;
 
 	m_Flags = flags;
-	m_HashFile = hash;
-}
-
-CResourceBuffer::~CResourceBuffer()
-{
-	// free me
-	delete[] m_FileName,
-		m_CmdExec;
+	m_FileHash = hash;
 }

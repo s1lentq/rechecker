@@ -8,12 +8,12 @@ public:
 
 	IGameClient *GetGameClient() const { return m_pClient; };
 	CResourceBuffer *GetResource() const { return m_pResource; };
-	uint32 GetHash() const { return m_Hash; };
+	uint32 GetClientHash() const { return m_ClientHash; };
 
 private:
 	IGameClient *m_pClient;
 	CResourceBuffer *m_pResource;
-	uint32 m_Hash;
+	uint32 m_ClientHash;
 };
 
 class CExecManager
@@ -24,7 +24,7 @@ public:
 	void Clear(IGameClient *pClient = NULL);
 
 private:
-	typedef std::vector<CBufExec *> CBufExecList;
+	typedef std::list<CBufExec *> CBufExecList;
 	CBufExecList m_execList;
 };
 

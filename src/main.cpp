@@ -16,7 +16,7 @@ bool OnMetaAttach()
 	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponce()->registerHook(&SV_CheckConsistencyResponce);
 	g_RehldsApi->GetHookchains()->SV_DropClient()->registerHook(&SV_DropClient);
 
-	SV_AddResource = reinterpret_cast<void (*)(resourcetype_t, const char *, int, unsigned char, int)>(g_RehldsApi->GetFuncs()->SV_AddResource);
+	SV_AddResource = g_RehldsApi->GetFuncs()->SV_AddResource;
 
 	// initialize resource config
 	Resource.Init();
