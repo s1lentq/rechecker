@@ -1,6 +1,6 @@
 #include "precompiled.h"
 
-void UTIL_Printf(char *fmt, ...)
+void UTIL_Printf(const char *fmt, ...)
 {
 	va_list argptr;
 	static char string[1024];
@@ -13,7 +13,7 @@ void UTIL_Printf(char *fmt, ...)
 	SERVER_PRINT(string);
 }
 
-void UTIL_LogPrintf(char *fmt, ...)
+void UTIL_LogPrintf(const char *fmt, ...)
 {
 	va_list argptr;
 	static char string[1024];
@@ -26,7 +26,7 @@ void UTIL_LogPrintf(char *fmt, ...)
 	ALERT(at_logged, "%s", string);
 }
 
-char *UTIL_VarArgs(char *format, ...)
+char *UTIL_VarArgs(const char *format, ...)
 {
 	va_list argptr;
 	static char string[1024];

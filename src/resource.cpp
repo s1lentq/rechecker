@@ -1,40 +1,40 @@
 #include "precompiled.h"
 
-CConfig Config;
+CResourceFile Resource;
 
-void CConfig::AddResource()
+void CResourceFile::Add()
 {
-	ResourceCheckerVectorIt it = m_vector.begin();
 	int nConsistency = g_RehldsServerData->GetConsistencyNum();
 
-	while (it != m_vector.end())
+	for (auto iter = m_resourceList.cbegin(); iter != m_resourceList.cend(); ++iter)
 	{
-		CResourceCheckerNew *pRes = (*it);
+		CResourceBuffer *pRes = (*iter);
 
 		// prevent duplicate of filenames
 		// check if filename is been marked so do not add the resource again
 		if (pRes->GetMark() != true) {
-#ifdef _DEBUG
-			printf(__FUNCTION__ " :: (%s)(%s)\n", pRes->GetFileName(), pRes->GetCmdExec());
-#endif // _DEBUG
+//#ifdef _DEBUG
+			if (CVAR_GET_FLOAT("developer") == 1.0f) {
+				UTIL_Printf(__FUNCTION__ " :: (%s)(%s)(%x)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetHashFile());
+			}
+//#endif // _DEBUG
 			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, 4095);
 			nConsistency++;
 		}
-
-		it++;
 	}
+
 	g_RehldsServerData->SetConsistencyNum(nConsistency);
 }
 
-void CConfig::ClearResources()
+void CResourceFile::Clear()
 {
-	m_PreHash = 0;
+	m_PrevHash = 0;
 
 	// clear resources
-	m_vector.clear();
+	m_resourceList.clear();
 }
 
-void CConfig::Init()
+void CResourceFile::Init()
 {
 	char *pos;
 	char path[MAX_PATH_LENGTH];
@@ -49,32 +49,8 @@ void CConfig::Init()
 
 	*(pos + 1) = '\0';
 
-	// config.ini
-	snprintf(m_szPathConfirDir, sizeof(m_szPathConfirDir) - 1, "%s" FILE_INI_CONFIG, path);
-
 	// resources.ini
-	snprintf(m_szPathResourcesDir, sizeof(m_szPathResourcesDir) - 1, "%s" FILE_INI_RESOURCES, path);
-}
-
-void CConfig::Load()
-{
-	//ParseConfig();
-	ParseResources();
-}
-
-void CConfig::ParseConfig()
-{
-	FILE *fp = fopen(m_szPathResourcesDir, "r");
-
-	if (fp == NULL)
-	{
-		UTIL_Printf(__FUNCTION__ ": can't find path to " FILE_INI_CONFIG "\n");
-		return;
-	}
-
-	// soon coming..
-
-	fclose(fp);
+	snprintf(m_PathDir, sizeof(m_PathDir) - 1, "%s" FILE_INI_RESOURCES, path);
 }
 
 inline uint8 hexbyte(uint8 *hex)
@@ -92,7 +68,7 @@ inline bool invalidchar(const char c)
 		|| c == '>' || c == '|') != 0;
 }
 
-bool FileIsValidChar(char *psrc, char &pchar) {
+bool IsValidFilename(char *psrc, char &pchar) {
 
 	char *pch = strrchr(psrc, '/');
 
@@ -127,7 +103,7 @@ bool FileIsExtension(char *psrc) {
 	return strchr(pch, '/') == NULL;
 }
 
-void CConfig::ParseResources()
+void CResourceFile::Load()
 {
 	char *pos;
 	char buffer[4096];
@@ -135,12 +111,12 @@ void CConfig::ParseResources()
 	FILE *fp;
 	int argc;
 	int len;
-	flag_type_resources flag = FLAG_TYPE_NONE;
+	int flags;
 	char filename[MAX_PATH_LENGTH];
 	char cmdBufExec[MAX_PATH_LENGTH];
 	int cline = 0;
 
-	fp = fopen(m_szPathResourcesDir, "r");
+	fp = fopen(m_PathDir, "r");
 
 	if (fp == NULL)
 	{
@@ -154,16 +130,17 @@ void CConfig::ParseResources()
 		pos = buffer;
 
 		cline++;
-
+		
 		if (*pos == '\0' || *pos == ';' || *pos == '\\' || *pos == '/' || *pos == '#')
 			continue;
 
 		const char *pToken = GetNextToken(&pos);
 
 		argc = 0;
-		hash[0] = '\0';
-		flag = FLAG_TYPE_NONE;
-		
+		flags = FLAG_TYPE_NONE;
+
+		memset(hash, 0, sizeof(hash));
+
 		while (pToken != NULL && argc <= MAX_PARSE_ARGUMENT)
 		{
 			len = strlen(pToken);
@@ -184,14 +161,14 @@ void CConfig::ParseResources()
 				pbuf[len] = '\0';
 
 				if (_stricmp((const char *)pbuf, "UNKNOWN") == 0) {
-					flag = FLAG_TYPE_HASH_ANY;
+					flags = FLAG_TYPE_HASH_ANY;
 				}
 				else
 				{
 					for (int i = 0; i < sizeof(pbuf) / 2; i++)
 						hash[i] = hexbyte(&pbuf[i * 2]);
 
-					flag = (*(uint32 *)&hash[0] != 0x00000000) ? FLAG_TYPE_EXISTS : FLAG_TYPE_MISSGIN;
+					flags = (*(uint32 *)&hash[0] != 0x00000000) ? FLAG_TYPE_EXISTS : FLAG_TYPE_MISSGIN;
 				}
 
 				break;
@@ -201,8 +178,27 @@ void CConfig::ParseResources()
 				strncpy(cmdBufExec, pToken, len + 1);
 				cmdBufExec[len + 1] = '\0';
 
-				// replface \' to "
-				StringReplace(cmdBufExec, "'", "\"");
+				if (_stricmp(cmdBufExec, "IGNORE") == 0) {
+					flags = FLAG_TYPE_IGNORE;
+					cmdBufExec[0] = '\0';
+				}
+				else if (_stricmp(cmdBufExec, "BREAK") == 0) {
+					flags |= FLAG_TYPE_BREAK;
+					cmdBufExec[0] = '\0';
+				}
+				else {
+					// replface \' to "
+					StringReplace(cmdBufExec, "'", "\"");
+				}
+			}
+			case ARG_TYPE_FLAG:
+			{
+				if (_stricmp(pToken, "IGNORE") == 0) {
+					flags = FLAG_TYPE_IGNORE;
+				}
+				else if (_stricmp(pToken, "BREAK") == 0) {
+					flags |= FLAG_TYPE_BREAK;
+				}
 				break;
 			}
 			default:
@@ -211,6 +207,11 @@ void CConfig::ParseResources()
 
 			argc++;
 			pToken = GetNextToken(&pos);
+
+			if (pToken == NULL && argc == ARG_TYPE_FLAG) {
+				// go to next argument
+				argc++;
+			}
 		}
 
 		if (argc >= MAX_PARSE_ARGUMENT) {
@@ -226,29 +227,33 @@ void CConfig::ParseResources()
 				continue;
 			}
 
-			else if (!FileIsValidChar(filename, pchar)) {
+			else if (!IsValidFilename(filename, pchar)) {
 				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; filename has invalid character '%c' on line %d\n", pchar, cline);
 				continue;
 			}
 
-			else if (flag == FLAG_TYPE_NONE) {
+			else if (flags == FLAG_TYPE_NONE) {
 				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing hash failed on line %d\n", cline);
 				continue;
 			}
 
-			else if (strlen(cmdBufExec) <= 0) {
-				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; command line is empty on line %d\n", cline);
+			// TODO: is there a need to flag FLAG_TYPE_BREAK without cmdexec?
+			else if (strlen(cmdBufExec) <= 0 && !(flags & (FLAG_TYPE_IGNORE | FLAG_TYPE_BREAK))) {
+				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing command line is empty on line %d\n", cline);
 				continue;
 			}
 
-			AddElement(filename, cmdBufExec, flag, *(uint32 *)&hash[0]);
+			AddElement(filename, cmdBufExec, flags, *(uint32 *)&hash[0]);
+		}
+		else if (pToken != NULL || argc > ARG_TYPE_FILE_NAME) {
+			UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing not enough arguments on line %d (got '%d', expected '%d')\n", cline, argc, MAX_PARSE_ARGUMENT);
 		}
 	}
 
 	fclose(fp);
 }
 
-const char *CConfig::GetNextToken(char **pbuf)
+const char *CResourceFile::GetNextToken(char **pbuf)
 {
 	char *rpos = *pbuf;
 	if (*rpos == '\0')
@@ -340,17 +345,17 @@ void TrimSpace(char *pbuf)
 		*pend = '\0';
 }
 
-void CConfig::AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash)
+void CResourceFile::AddElement(char *filename, char *cmdExec, int flags, uint32 hash)
 {
-	m_vector.push_back(new CResourceCheckerNew(filename, cmdExec, flag, hash));
+	m_resourceList.push_back(new CResourceBuffer(filename, cmdExec, flags, hash));
 
 	// to mark files which are not required to add to the resource again
-	for (ResourceCheckerVectorIt it = m_vector.begin(); it != m_vector.end(); ++it)
+	for (auto iter = m_resourceList.cbegin(); iter != m_resourceList.cend(); ++iter)
 	{
-		CResourceCheckerNew *pRes = (*it);
+		CResourceBuffer *pRes = (*iter);
 
 		// do not check the last element
-		if (pRes == m_vector.back())
+		if (pRes == m_resourceList.back())
 			continue;
 
 		if (_stricmp(pRes->GetFileName(), filename) == 0) {
@@ -360,75 +365,103 @@ void CConfig::AddElement(char *filename, char *cmdExec, flag_type_resources flag
 	}
 }
 
-bool CConfig::FileConsistencyResponce(IGameClient *pSenderClient, resource_t *resource, uint32 hash)
+bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource_t *resource, uint32 hash)
 {
 	bool bCheckeFiles = false;
 	find_type_e typeFind = FIND_TYPE_NONE;
+	std::vector<CResourceBuffer *> tempResourceList;
 
-	for (ResourceCheckerVectorIt it = m_vector.begin(); it != m_vector.end(); ++it)
+	for (auto iter = m_resourceList.begin(); iter != m_resourceList.end(); ++iter)
 	{
-		CResourceCheckerNew *pRes = (*it);
+		CResourceBuffer *pRes = (*iter);
 
 		if (strcmp(resource->szFileName, pRes->GetFileName()) != 0)
 			continue;
 
 		bCheckeFiles = true;
 
-		switch (pRes->GetFlagFile())
+		int flags = pRes->GetFlagsFile();
+
+		if (flags & FLAG_TYPE_IGNORE)
 		{
-		case FLAG_TYPE_EXISTS:
-			if (m_PreHash != hash && pRes->GetHashFile() == hash) {
+			if (m_PrevHash != hash) {
+				tempResourceList.push_back(pRes);
+				typeFind = FIND_TYPE_IGNORE;
+			}
+		}
+		else if (flags & FLAG_TYPE_EXISTS)
+		{
+			if (m_PrevHash != hash && pRes->GetHashFile() == hash) {
 				typeFind = FIND_TYPE_ON_HASH;
 			}
-			break;
-		case FLAG_TYPE_MISSGIN:
-			if (m_PreHash == hash) {
+		}
+		else if (flags & FLAG_TYPE_MISSGIN)
+		{
+			if (m_PrevHash == hash) {
 				typeFind = FIND_TYPE_MISSING;
 			}
-			break;
-		case FLAG_TYPE_HASH_ANY:
-			if (m_PreHash != hash) {
-				typeFind = FIND_TYPE_ANY_HASH;
-			}
-			break;
-		default:
-			typeFind = FIND_TYPE_NONE;
-			break;
 		}
+		else if (flags & FLAG_TYPE_HASH_ANY)
+		{
+			if (m_PrevHash != hash)
+			{
+				typeFind = FIND_TYPE_ANY_HASH;
+
+				for (size_t i = 0; i < tempResourceList.size(); i++) {
+					CResourceBuffer *pTemp = tempResourceList[i];
+
+					if (_stricmp(pTemp->GetFileName(), pRes->GetFileName()) != 0) {
+						continue;
+					}
+
+					if (pTemp->GetHashFile() == hash) {
+						typeFind = FIND_TYPE_NONE;
+						break;
+					}
+				}
+			}
+		}
+		else
+			typeFind = FIND_TYPE_NONE;
 
 		if (typeFind != FIND_TYPE_NONE) {
+
 			// push exec cmd
-			CmdExec.AddElement(pSenderClient, pRes);
-#ifdef _DEBUG
-			printf("* (%s)(%s)(%x)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetHashFile());
-#endif // _DEBUG
+			Exec.AddElement(pSenderClient, pRes, hash);
+
+//#ifdef _DEBUG
+			if (CVAR_GET_FLOAT("developer") == 1.0f) {
+				UTIL_Printf("  -> filename: (%s), cmdexec: (%s), hash: (%x)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetHashFile());
+			}
+//#endif // _DEBUG
 		}
 	}
 
-	m_PreHash = hash;
+	m_PrevHash = hash;
 	return !bCheckeFiles;
 }
 
-CResourceCheckerNew::CResourceCheckerNew(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash)
+CResourceBuffer::CResourceBuffer(char *filename, char *cmdExec, int flags, uint32 hash)
 {
-	int iLenFile = strlen(filename);
-	int iLenExec = strlen(cmdExec);
+	int lenFile = strlen(filename);
+	int lenExec = strlen(cmdExec);
 
-	m_FileName = new char[iLenFile + 1];
-	m_CmdExec = new char[iLenExec + 1];
-	
-	strncpy(m_FileName, filename, iLenFile);
-	strncpy(m_CmdExec, cmdExec, iLenExec);
+	m_FileName = new char[lenFile + 1];
+	m_CmdExec = new char[lenExec + 1];
 
-	m_FileName[iLenFile] = '\0';
-	m_CmdExec[iLenExec] = '\0';
+	strncpy(m_FileName, filename, lenFile);
+	strncpy(m_CmdExec, cmdExec, lenExec);
+
+	m_FileName[lenFile] = '\0';
+	m_CmdExec[lenExec] = '\0';
+
 	m_Mark = false;
 
-	m_Flag = flag;
+	m_Flags = flags;
 	m_HashFile = hash;
 }
 
-CResourceCheckerNew::~CResourceCheckerNew()
+CResourceBuffer::~CResourceBuffer()
 {
 	// free me
 	delete[] m_FileName,

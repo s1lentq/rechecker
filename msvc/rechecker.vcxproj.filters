@@ -460,8 +460,8 @@
     <ClInclude Include="..\src\main.h" />
     <ClInclude Include="..\src\precompiled.h" />
     <ClInclude Include="..\src\engine_rehlds.h" />
-    <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\cmdexec.h" />
+    <ClInclude Include="..\src\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\parsemsg.cpp">
@@ -478,8 +478,8 @@
     <ClCompile Include="..\src\meta_api.cpp" />
     <ClCompile Include="..\src\precompiled.cpp" />
     <ClCompile Include="..\src\sdk_util.cpp" />
-    <ClCompile Include="..\src\config.cpp" />
     <ClCompile Include="..\src\cmdexec.cpp" />
+    <ClCompile Include="..\src\resource.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sdk">

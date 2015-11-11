@@ -3,8 +3,8 @@
 plugin_info_t Plugin_info =
 {
 	META_INTERFACE_VERSION,
-	"ReChecker",
-	"1.0",
+	"Rechecker",
+	"1.1",
 	__DATE__,
 	"s1lent",
 	"http://www.dedicated-server.ru/",
@@ -25,7 +25,7 @@ META_FUNCTIONS gMetaFunctionTable;
 extern bool OnMetaAttach();
 extern void OnMetaDetach();
 
-C_DLLEXPORT int Meta_Query(char *,plugin_info_t **pPlugInfo,mutil_funcs_t *pMetaUtilFuncs)
+C_DLLEXPORT int Meta_Query(char *, plugin_info_t **pPlugInfo, mutil_funcs_t *pMetaUtilFuncs)
 {
 	*pPlugInfo = &(Plugin_info);
 	gpMetaUtilFuncs = pMetaUtilFuncs;
@@ -33,7 +33,7 @@ C_DLLEXPORT int Meta_Query(char *,plugin_info_t **pPlugInfo,mutil_funcs_t *pMeta
 	return 1;
 }
 
-C_DLLEXPORT int Meta_Attach(PLUG_LOADTIME now,META_FUNCTIONS *pFunctionTable,meta_globals_t *pMGlobals,gamedll_funcs_t *pGamedllFuncs)
+C_DLLEXPORT int Meta_Attach(PLUG_LOADTIME now, META_FUNCTIONS *pFunctionTable, meta_globals_t *pMGlobals, gamedll_funcs_t *pGamedllFuncs)
 {
 	gpMetaGlobals = pMGlobals;
 	gpGamedllFuncs = pGamedllFuncs;

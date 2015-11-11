@@ -3,6 +3,7 @@
 DLL_FUNCTIONS *g_pFunctionTable;
 
 extern qboolean ClientConnect_Post(edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[128]);
+
 extern void ServerDeactivate_Post();
 extern void ServerActivate_Post(edict_t *pEdictList, int edictCount, int clientMax);
 extern void ClientPutInServer_Post(edict_t *pEntity);
@@ -28,7 +29,7 @@ static DLL_FUNCTIONS gFunctionTable =
 	NULL,					// pfnResetGlobalState
 
 	NULL,					// pfnClientConnect
-	NULL,					// pfnClientDisconnect
+	NULL,				// pfnClientDisconnect
 	NULL,					// pfnClientKill
 	NULL,					// pfnClientPutInServer
 	NULL,					// pfnClientCommand

@@ -1,21 +1,22 @@
 #include "precompiled.h"
 
-CBufExec CmdExec;
+CExecManager Exec;
 
-CBufExecNew::CBufExecNew(IGameClient *pClient, CResourceCheckerNew *pResource)
+CBufExec::CBufExec(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
 {
 	m_pClient = pClient;
 	m_pResource = pResource;
+	m_Hash = responseHash;
 }
 
-CBufExecNew::~CBufExecNew()
+CBufExec::~CBufExec()
 {
 	;
 }
 
-void CBufExec::AddElement(IGameClient *pClient, CResourceCheckerNew *pResource)
+void CExecManager::AddElement(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
 {
-	m_vector.push_back(new CBufExecNew(pClient, pResource));
+	m_execList.push_back(new CBufExec(pClient, pResource, responseHash));
 }
 
 void StringReplace(char *src, const char *strold, const char *strnew)
@@ -37,7 +38,7 @@ void StringReplace(char *src, const char *strold, const char *strnew)
 	}
 }
 
-char *GetExecCmdPrepare(IGameClient *pClient, CResourceCheckerNew *pResource)
+char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
 {
 	int len;
 	const netadr_t *net;
@@ -48,15 +49,15 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceCheckerNew *pResource)
 
 	net = pClient->GetNetChan()->GetRemoteAdr();
 
+	// replace key values
+	StringReplace(string, "[file_name]", pResource->GetFileName());
+	StringReplace(string, "[file_hash]", UTIL_VarArgs("%x", responseHash));
+
 	// replace of templates for identification
-	StringReplace(string, "[name]", pClient->GetName());
 	StringReplace(string, "[userid]", UTIL_VarArgs("#%u", g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict())));
 	StringReplace(string, "[steamid]", UTIL_VarArgs("%s", g_engfuncs.pfnGetPlayerAuthId(pClient->GetEdict())));
 	StringReplace(string, "[ip]", UTIL_VarArgs("%i.%i.%i.%i", net->ip[0], net->ip[1], net->ip[2], net->ip[3]));
-
-	// replace key values
-	StringReplace(string, "[file_name]", pResource->GetFileName());
-	StringReplace(string, "[file_hash]", UTIL_VarArgs("%x", pResource->GetHashFile()));
+	StringReplace(string, "[name]", pClient->GetName());
 
 	len = strlen(string);
 
@@ -69,42 +70,71 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceCheckerNew *pResource)
 	return string;
 }
 
-void CBufExec::Exec(IGameClient *pClient)
+void CExecManager::CommandExecute(IGameClient *pClient)
 {
-	CBufExecVectorIt it = m_vector.begin();
-
-	while (it != m_vector.end())
+	bool bBreak = false;
+	auto iter = m_execList.begin();
+	
+	while (iter != m_execList.end())
 	{
-		CBufExecNew *exc = (*it);
+		CBufExec *pExec = (*iter);
 
-		if (exc->GetGameClient() != pClient) {
-			it++;
+		if (pExec->GetGameClient() != pClient) {
+			iter++;
 			continue;
 		}
 
+		CResourceBuffer *pRes = pExec->GetResource();
+
 		// exit the loop if the client is out of the game
 		// TODO: Check me!
-
 		if (!pClient->IsConnected()) {
 			break;
 		}
 
-		char *cmdExec = GetExecCmdPrepare(pClient, exc->GetResource());
+		char *cmdExec = GetExecCmdPrepare(pClient, pRes, pExec->GetHash());
+
+		// erase all cmdexec because have flag is break
+		if (bBreak) {
+			// erase cmd exec
+			delete pExec;
+			iter = m_execList.erase(iter);
+			continue;
+		}
 
 		if (cmdExec != NULL && cmdExec[0] != '\0') {
-			// execute cmd
+			// execute cmdexec
 			SERVER_COMMAND(cmdExec);
 
-			// erase cmd exec
-			delete exc;
-			it = m_vector.erase(it);
+			// erase cmdexec
+			delete pExec;
+			iter = m_execList.erase(iter);
 		}
 		else
-			it++;
+			iter++;
+
+		bBreak = (pRes->GetFlagsFile() & FLAG_TYPE_BREAK) == FLAG_TYPE_BREAK;
 	}
 }
 
-void CBufExec::Clear()
+void CExecManager::Clear(IGameClient *pClient)
 {
-	m_vector.clear();
+	if (pClient == NULL) {
+		m_execList.clear();
+		return;
+	}
+
+	auto iter = m_execList.begin();
+	while (iter != m_execList.end())
+	{
+		CBufExec *pExec = (*iter);
+
+		// erase cmdexec
+		if (pExec->GetGameClient() == pClient) {
+			delete pExec;
+			iter = m_execList.erase(iter);
+		}
+		else
+			iter++;
+	}
 }

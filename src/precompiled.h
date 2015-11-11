@@ -2,8 +2,13 @@
 
 #ifdef _WIN32 // WINDOWS
 	#pragma warning(disable : 4005)
+#else
+	#define _stricmp strcasecmp
+	// Deail with stupid macro in kernel.h
+	#undef __FUNCTION__
 #endif // _WIN32
 
+#include <vector>
 #include <cstring>		// strrchr
 
 #include <extdll.h>
@@ -16,19 +21,21 @@
 #include "engine_rehlds.h"
 
 #include "main.h"
-#include "config.h"
+#include "resource.h"
 #include "cmdexec.h"
-#include "sdk_util.h"		// UTIL_LogPrintf, etc
+//#include "sdk_util.h"		// UTIL_LogPrintf, etc
 
-/* <7508> ../engine/consistency.h:9 */
-typedef struct consistency_s
-{
-	char * filename;
-	int issound;
-	int orig_index;
-	int value;
-	int check_type;
-	float mins[3];
-	float maxs[3];
-} consistency_t;
+#undef DLLEXPORT
+#ifdef _WIN32
+#define DLLEXPORT __declspec(dllexport)
+#define NOINLINE __declspec(noinline)
+#else
+#define DLLEXPORT __attribute__((visibility("default")))
+#define NOINLINE __attribute__((noinline))
+#define WINAPI		/* */
+#endif // _WIN32
+
+extern void UTIL_Printf(const char *fmt, ...);
+extern void UTIL_LogPrintf(const char *fmt, ...);
+extern char *UTIL_VarArgs(const char *format, ...);
 
