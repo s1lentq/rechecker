@@ -1,29 +1,28 @@
 #include "precompiled.h"
 
-CExecManager Exec;
+CExecMngr Exec;
 
-CBufExec::CBufExec(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
+CExecMngr::CBufExec::CBufExec(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
 {
 	m_pClient = pClient;
 	m_pResource = pResource;
 	m_ClientHash = responseHash;
 }
 
-CBufExec::~CBufExec()
+CExecMngr::CBufExec::~CBufExec()
 {
 	;
 }
 
-void CExecManager::AddElement(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
+void CExecMngr::AddElement(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
 {
 	m_execList.push_back(new CBufExec(pClient, pResource, responseHash));
 }
 
 void StringReplace(char *src, const char *strold, const char *strnew)
 {
-	if (strnew == NULL) {
+	if (strnew == NULL)
 		return;
-	}
 
 	char *p = src;
 	int oldLen = strlen(strold), newLen = strlen(strnew);
@@ -44,6 +43,10 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	const netadr_t *net;
 	static char string[256];
 
+	// check cmdexec is empty
+	if (pResource->GetCmdExec() == NULL)
+		return NULL;
+
 	strncpy(string, pResource->GetCmdExec(), sizeof(string) - 1);
 	string[sizeof(string) - 1] = '\0';
 
@@ -61,16 +64,15 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 
 	len = strlen(string);
 
-	if (len < sizeof(string) - 2) {
+	if (len < sizeof(string) - 2)
 		strcat(string, "\n");
-	}
 	else
 		string[len - 1] = '\n';
 
 	return string;
 }
 
-void CExecManager::CommandExecute(IGameClient *pClient)
+void CExecMngr::CommandExecute(IGameClient *pClient)
 {
 	bool bBreak = false;
 	auto iter = m_execList.begin();
@@ -79,7 +81,8 @@ void CExecManager::CommandExecute(IGameClient *pClient)
 	{
 		CBufExec *pExec = (*iter);
 
-		if (pExec->GetGameClient() != pClient) {
+		if (pExec->GetGameClient() != pClient)
+		{
 			iter++;
 			continue;
 		}
@@ -88,38 +91,31 @@ void CExecManager::CommandExecute(IGameClient *pClient)
 
 		// exit the loop if the client is out of the game
 		// TODO: Check me!
-		if (!pClient->IsConnected()) {
+		if (!pClient->IsConnected())
+		{
 			break;
 		}
 
 		char *cmdExec = GetExecCmdPrepare(pClient, pRes, pExec->GetClientHash());
 
-		// erase all cmdexec because have flag is break
-		if (bBreak) {
-			// erase cmd exec
-			delete pExec;
-			iter = m_execList.erase(iter);
-			continue;
-		}
-
-		if (cmdExec != NULL && cmdExec[0] != '\0') {
+		if (!bBreak // erase all cmdexec because have flag is break
+			&& cmdExec != NULL && cmdExec[0] != '\0')
+		{
 			// execute cmdexec
 			SERVER_COMMAND(cmdExec);
-
-			// erase cmdexec
-			delete pExec;
-			iter = m_execList.erase(iter);
 		}
-		else
-			iter++;
 
-		bBreak = (pRes->GetFileFlags() & FLAG_TYPE_BREAK) == FLAG_TYPE_BREAK;
+		// erase cmdexec
+		delete pExec;
+		iter = m_execList.erase(iter);
+		bBreak = (pRes->GetFileFlag() == FLAG_TYPE_BREAK);
 	}
 }
 
-void CExecManager::Clear(IGameClient *pClient)
+void CExecMngr::Clear(IGameClient *pClient)
 {
-	if (pClient == NULL) {
+	if (pClient == NULL)
+	{
 		m_execList.clear();
 		return;
 	}
@@ -130,7 +126,8 @@ void CExecManager::Clear(IGameClient *pClient)
 		CBufExec *pExec = (*iter);
 
 		// erase cmdexec
-		if (pExec->GetGameClient() == pClient) {
+		if (pExec->GetGameClient() == pClient)
+		{
 			delete pExec;
 			iter = m_execList.erase(iter);
 		}

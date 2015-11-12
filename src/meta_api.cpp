@@ -8,7 +8,7 @@ plugin_info_t Plugin_info =
 	__DATE__,
 	"s1lent",
 	"http://www.dedicated-server.ru/",
-	"ReChecker",
+	"Rechecker",
 	PT_STARTUP,
 	PT_NEVER,
 };

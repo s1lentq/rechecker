@@ -2,27 +2,17 @@
 
 #define FILE_INI_RESOURCES	"resources.ini"
 
-#define MAX_CLIENTS		32
 #define MAX_CMD_LENGTH		128
-#define MAX_PATH_LENGTH		260
+#define MAX_RESOURCE_LIST	1280
 
 enum flag_type_resources
 {
 	FLAG_TYPE_NONE = 0,
-	FLAG_TYPE_EXISTS	= (1 << 0),	// to comparison with the specified hash value
-	FLAG_TYPE_MISSGIN	= (1 << 1),	// check it missing file on client
-	FLAG_TYPE_IGNORE	= (1 << 2),	// ignore the specified hash value
-	FLAG_TYPE_BREAK		= (1 << 3),	// do not check a next files
-	FLAG_TYPE_HASH_ANY	= (1 << 4),	// any file with any the hash value
-};
-
-enum find_type_e
-{
-	FIND_TYPE_NONE = 0,
-	FIND_TYPE_ON_HASH,
-	FIND_TYPE_MISSING,
-	FIND_TYPE_IGNORE,
-	FIND_TYPE_ANY_HASH,
+	FLAG_TYPE_EXISTS,		// to comparison with the specified hash value
+	FLAG_TYPE_MISSING,		// check it missing file on client
+	FLAG_TYPE_IGNORE,		// ignore the specified hash value
+	FLAG_TYPE_BREAK,		// do not check a next files
+	FLAG_TYPE_HASH_ANY,		// any file with any the hash value
 };
 
 enum arg_type_e
@@ -38,16 +28,14 @@ enum arg_type_e
 class CResourceBuffer
 {
 public:
-	CResourceBuffer(char *filename, char *cmdExec, int flags, uint32 hash);
+	CResourceBuffer(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line);
 
 	uint32 GetFileHash() const { return m_FileHash; };
-	int GetFileFlags() const { return m_Flags; };
+	flag_type_resources GetFileFlag() const { return m_Flag; };
 
 	const char *GetFileName() const { return m_FileName; };
 	const char *GetCmdExec() const { return m_CmdExec; };
-
-	bool GetBreak() const { return m_Break; };
-	void SetBreak() { m_Break = true; };
+	int GetLine() const { return m_Line; };
 
 	bool IsDuplicate() const { return m_Duplicate; };
 	void SetDuplicate() { m_Duplicate = true; };
@@ -55,28 +43,27 @@ public:
 private:
 	uint32 m_FileHash;
 
-	int m_Flags;
+	flag_type_resources m_Flag;
+	int m_Line;
 
 	const char *m_FileName;
 	const char *m_CmdExec;
 	bool m_Duplicate;
-	bool m_Break;
 };
 
 class CResourceFile
 {
 public:
 	void Init();
-	void Load();
-
-	void Add();
 	void Clear();
+	void LoadResources();
+	void CreateResourceList();
 
 	bool FileConsistencyResponce(IGameClient *pSenderClient, resource_t *resource, uint32 hash);
 	bool IsConfigLoaded() const { return !m_ConfigFailed; };
 
 private:
-	void AddElement(char *filename, char *cmdExec, int flags, uint32 hash);
+	void AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line);
 
 	// parse
 	const char *GetNextToken(char **pbuf);
@@ -85,6 +72,7 @@ private:
 	typedef std::vector<CResourceBuffer *> ResourceList;
 	ResourceList m_resourceList;
 
+	int m_DecalsNum;
 	uint32 m_PrevHash;
 	bool m_ConfigFailed;
 	char m_PathDir[MAX_PATH_LENGTH];
