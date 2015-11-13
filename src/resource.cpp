@@ -400,9 +400,9 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 			tempResourceList.push_back(pRes);
 			break;
 		case FLAG_TYPE_EXISTS:
-			if (pRes->GetFileHash() == hash)
+			if (pRes->GetFileHash() != hash)
 			{
-				typeFind = FLAG_TYPE_EXISTS;
+				typeFind = FLAG_TYPE_NONE;
 			}
 			break;
 		case FLAG_TYPE_HASH_ANY:
@@ -437,7 +437,7 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 			Exec.AddElement(pSenderClient, pRes, hash);
 
 #ifdef _DEBUG
-			UTIL_Printf("  -> filename: (%s), cmdexec: (%s), hash: (%x), typeFind: (%d)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetFileHash(), typeFind);
+			UTIL_Printf("  -> filename: (%s), exphash: (%x), resphash: (%x), typeFind: (%d), prevhash: (%x)\n", pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash);
 #endif // _DEBUG
 		}
 
