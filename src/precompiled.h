@@ -23,10 +23,9 @@
 #include "rehlds_api.h"
 #include "engine_rehlds.h"
 
-//#include "main.h"
+#include "main.h"
 //#include "task.h"
-
-#include "config.h"
+//#include "config.h"
 #include "resource.h"
 #include "cmdexec.h"
 //#include "sdk_util.h"		// UTIL_LogPrintf, etc

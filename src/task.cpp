@@ -38,6 +38,7 @@ void CTaskMngr::StartFrame()
 			continue;
 		}
 
+		// is call a callback
 		pTask->Handler();
 
 		// erase task

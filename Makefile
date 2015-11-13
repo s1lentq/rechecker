@@ -3,7 +3,8 @@ COMPILER = /opt/intel/bin/icpc
 
 OBJECTS = src/main.cpp src/meta_api.cpp src/dllapi.cpp\
 	src/cmdexec.cpp src/engine_rehlds.cpp src/h_export.cpp\
-	src/resource.cpp src/sdk_util.cpp public/interface.cpp
+	src/resource.cpp src/sdk_util.cpp public/interface.cpp\
+########src/config.cpp src/task.cpp
 
 LINK = -lm -ldl -static-intel -static-libgcc -no-intel-extensions
 

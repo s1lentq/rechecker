@@ -43,8 +43,10 @@ bool OnMetaAttach()
 
 void OnMetaDetach()
 {
+	g_RehldsApi->GetHookchains()->SV_DropClient()->unregisterHook(&SV_DropClient);
+	g_RehldsApi->GetHookchains()->SV_ActivateServer()->unregisterHook(&SV_ActivateServer);
 	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponce()->unregisterHook(&SV_CheckConsistencyResponce);
-	
+
 	// clear
 	Exec.Clear();
 	/*Task.Clear();*/

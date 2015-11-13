@@ -38,6 +38,7 @@ void CResourceFile::CreateResourceList()
 void CResourceFile::Clear()
 {
 	m_PrevHash = 0;
+	m_DecalsNum = 0;
 
 	// clear resources
 	m_resourceList.clear();

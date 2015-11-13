@@ -10,4 +10,5 @@
 **/msvc/ipch
 **/PublishPath*.txt
 **/Server*.bat
+**/publish/*
 **/*.log

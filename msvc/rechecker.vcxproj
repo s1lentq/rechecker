@@ -268,8 +268,7 @@
       <ModuleDefinitionFile>rechecker.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST "$(ProjectDir)PostBuild.bat" (CALL "$(ProjectDir)PostBuild.bat" "$(TargetDir)" "$(TargetName)" "$(TargetExt)" "$(ProjectDir)")
-REM IF EXIST "$(ProjectDir)ServerStart_cs_6153.bat" (CALL "$(ProjectDir)ServerStart_cs_6153.bat" "$(ProjectDir)..\" "$(ProjectDir)..\")</Command>
+      <Command>IF EXIST "$(ProjectDir)PostBuild.bat" (CALL "$(ProjectDir)PostBuild.bat" "$(TargetDir)" "$(TargetName)" "$(TargetExt)" "$(ProjectDir)")</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Automatic deployment script</Message>
@@ -301,11 +300,11 @@ REM IF EXIST "$(ProjectDir)ServerStart_cs_6153.bat" (CALL "$(ProjectDir)ServerSt
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
