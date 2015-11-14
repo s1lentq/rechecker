@@ -58,12 +58,13 @@ public:
 	void Clear();
 	void LoadResources();
 	void CreateResourceList();
+	void Log(const char *fmt, ...);
 
 	bool FileConsistencyResponce(IGameClient *pSenderClient, resource_t *resource, uint32 hash);
-	bool IsConfigLoaded() const { return !m_ConfigFailed; };
 
 private:
 	void AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line);
+	void LogPrepare();
 
 	// parse
 	const char *GetNextToken(char **pbuf);
@@ -74,8 +75,12 @@ private:
 
 	int m_DecalsNum;
 	uint32 m_PrevHash;
-	bool m_ConfigFailed;
+
 	char m_PathDir[MAX_PATH_LENGTH];
+
+	// log data
+	char m_LogFilePath[MAX_PATH_LENGTH];
+	char m_LogDate[64];
 };
 
 extern CResourceFile Resource;

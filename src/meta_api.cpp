@@ -9,8 +9,8 @@ plugin_info_t Plugin_info =
 	"s1lent",
 	"http://www.dedicated-server.ru/",
 	"Rechecker",
-	PT_STARTUP,
-	PT_NEVER,
+	PT_CHANGELEVEL,
+	PT_ANYTIME,
 };
 
 meta_globals_t *gpMetaGlobals;

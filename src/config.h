@@ -9,13 +9,11 @@ public:
 	void Load();
 
 	float GetDelay() const { return m_DelayExec; };
-	bool IsConfigLoaded() const { return !m_ConfigFailed; };
 
 private:
 	void ResetValues();
 
 private:
-	bool m_ConfigFailed;
 	char m_PathDir[MAX_PATH_LENGTH];
 
 	// settings

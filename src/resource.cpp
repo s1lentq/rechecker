@@ -3,6 +3,9 @@
 CResourceFile Resource;
 std::vector<const char *> StringsCache;
 
+cvar_t cv_rch_log = { "rch_log", "0", 0, 0.0f, NULL };
+cvar_t *pcv_rch_log = NULL;
+
 void CResourceFile::CreateResourceList()
 {
 	int nConsistency = g_RehldsServerData->GetConsistencyNum();
@@ -23,9 +26,7 @@ void CResourceFile::CreateResourceList()
 				break;
 			}
 
-#ifdef _DEBUG
-			UTIL_Printf(__FUNCTION__ " :: (%s)(%s)(%x)\n", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetFileHash());
-#endif // _DEBUG
+			Log(__FUNCTION__ "  -> file: (%s), cmdexc: (%s), hash: (%x)", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetFileHash());
 			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, m_DecalsNum++);
 			nConsistency++;
 		}
@@ -46,6 +47,60 @@ void CResourceFile::Clear()
 	ClearStringsCache();
 }
 
+void CResourceFile::Log(const char *fmt, ...)
+{
+	if (pcv_rch_log->string[0] != '1')
+		return;
+
+	static char string[2048];
+
+	FILE *fp;
+	char *file;
+	bool bFirst = false;
+
+	fp = fopen(m_LogFilePath, "r");
+
+	if (fp != NULL)
+	{
+		bFirst = true;
+		fclose(fp);
+	}
+
+	fp = fopen(m_LogFilePath, "a");
+
+	if (fp == NULL)
+	{
+		return;
+	}
+
+	va_list argptr;
+	va_start(argptr, fmt);
+	vsnprintf(string, sizeof(string), fmt, argptr);
+	va_end(argptr);
+
+	strcat(string, "\n");
+	if (!bFirst)
+	{
+		file = strrchr(m_LogFilePath, '/');
+		if (file == NULL)
+			file = "null";
+
+		fprintf(fp, "L %s: Log file started (file \"%s\") (version \"%s\")\n", m_LogDate, file, Plugin_info.version);
+	}
+
+	fprintf(fp, "L %s: %s", m_LogDate, string);
+	fclose(fp);
+}
+
+void CreateDirectory(const char *path)
+{
+	_mkdir(path
+#ifndef _WIN32
+	,0755
+#endif // _WIN32
+	);
+}
+
 void CResourceFile::Init()
 {
 	char *pos;
@@ -61,8 +116,16 @@ void CResourceFile::Init()
 
 	*(pos + 1) = '\0';
 
+	strncpy(m_LogFilePath, path, sizeof(m_LogFilePath) - 1);
+	m_LogFilePath[sizeof(m_LogFilePath) - 1] = '\0';
+	strcat(m_LogFilePath, "logs/");
+	CreateDirectory(m_LogFilePath);
+
 	// resources.ini
 	snprintf(m_PathDir, sizeof(m_PathDir), "%s" FILE_INI_RESOURCES, path);
+
+	g_engfuncs.pfnCvar_RegisterVariable(&cv_rch_log);
+	pcv_rch_log = g_engfuncs.pfnCVarGetPointer(cv_rch_log.name);
 }
 
 inline uint8 hexbyte(uint8 *hex)
@@ -114,6 +177,27 @@ bool IsFileHasExtension(char *psrc)
 	return strchr(pch, '/') == NULL;
 }
 
+void CResourceFile::LogPrepare()
+{
+	char dateFile[64];
+	char *pos;
+	time_t td;
+	tm *lt;
+
+	td = time(NULL);
+	lt = localtime(&td);
+
+	// remove path to log file
+	if ((pos = strrchr(m_LogFilePath, '/')) != NULL)
+	{
+		*(pos + 1) = '\0';
+	}
+
+	strftime(dateFile, sizeof(dateFile), "L_%d_%m_%Y.log", lt);
+	strftime(m_LogDate, sizeof(m_LogDate), "%m/%d/%Y - %H:%M:%S", lt);
+	strcat(m_LogFilePath, dateFile);
+}
+
 void CResourceFile::LoadResources()
 {
 	char *pos;
@@ -131,7 +215,6 @@ void CResourceFile::LoadResources()
 
 	if (fp == NULL)
 	{
-		m_ConfigFailed = true;
 		UTIL_Printf(__FUNCTION__ ": can't find path to " FILE_INI_RESOURCES "\n");
 		return;
 	}
@@ -271,7 +354,7 @@ void CResourceFile::LoadResources()
 	}
 
 	fclose(fp);
-	m_ConfigFailed = false;
+	LogPrepare();
 }
 
 const char *CResourceFile::GetNextToken(char **pbuf)
@@ -367,7 +450,7 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 		m_PrevHash = hash;
 		return true;
 	}
-	
+
 	// strange thing
 	// if this happened when missing all the files from client
 	if (!m_PrevHash)
@@ -433,12 +516,13 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 
 		if (typeFind != FLAG_TYPE_NONE)
 		{
-			// push exec cmd
-			Exec.AddElement(pSenderClient, pRes, hash);
-
-#ifdef _DEBUG
-			UTIL_Printf("  -> filename: (%s), exphash: (%x), resphash: (%x), typeFind: (%d), prevhash: (%x)\n", pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash);
-#endif // _DEBUG
+			// TODO: what is?
+			if (hash != 0x0)
+			{
+				// push exec cmd
+				Exec.AddElement(pSenderClient, pRes, hash);
+			}
+			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%d), prevhash: (%x), (%s)", pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash, pSenderClient->GetName());
 		}
 
 		bHandled = true;

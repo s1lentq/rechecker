@@ -101,6 +101,8 @@ void CExecMngr::CommandExecute(IGameClient *pClient)
 		if (!bBreak // erase all cmdexec because have flag is break
 			&& cmdExec != NULL && cmdExec[0] != '\0')
 		{
+			Resource.Log(" -> ExecuteCMD: (%s), for (%s)", cmdExec, pClient->GetName());
+
 			// execute cmdexec
 			SERVER_COMMAND(cmdExec);
 		}

@@ -73,7 +73,6 @@ void CConfig::Load()
 	
 	if (fp == NULL)
 	{
-		m_ConfigFailed = true;
 		UTIL_Printf(__FUNCTION__ ": can't find path to " FILE_INI_CONFIG "\n");
 		return;
 	}
@@ -97,5 +96,4 @@ void CConfig::Load()
 	}
 
 	fclose(fp);
-	m_ConfigFailed = false;
 }

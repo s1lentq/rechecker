@@ -14,6 +14,7 @@
 #include <vector>
 #include <cstring>		// strrchr
 
+#include <time.h>		// time, localtime etc
 #include <extdll.h>
 #include <enginecallback.h>		// ALERT()
 
