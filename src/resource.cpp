@@ -159,6 +159,16 @@ void CResourceFile::Init()
 	pcv_rch_log = g_engfuncs.pfnCVarGetPointer(cv_rch_log.name);
 }
 
+uint32 __declspec(naked) swap_endian(uint32 value)
+{
+	__asm
+	{
+		mov eax, dword ptr[esp + 4]
+		bswap eax
+		ret
+	}
+}
+
 inline uint8 hexbyte(uint8 *hex)
 {
 	return ((hex[0] > '9' ? toupper(hex[0]) - 'A' + 10 : hex[0] - '0') << 4)
@@ -240,6 +250,7 @@ void CResourceFile::LoadResources()
 	char filename[MAX_PATH_LENGTH];
 	char cmdBufExec[MAX_PATH_LENGTH];
 	int cline = 0;
+	bool bBreak;
 
 	fp = fopen(m_PathDir, "r");
 
@@ -261,6 +272,7 @@ void CResourceFile::LoadResources()
 		const char *pToken = GetNextToken(&pos);
 
 		argc = 0;
+		bBreak = false;
 		flag = FLAG_TYPE_NONE;
 
 		memset(hash, 0, sizeof(hash));
@@ -309,7 +321,7 @@ void CResourceFile::LoadResources()
 				}
 				else if (_stricmp(cmdBufExec, "BREAK") == 0)
 				{
-					flag = FLAG_TYPE_BREAK;
+					bBreak = true;
 					cmdBufExec[0] = '\0';
 				}
 				else
@@ -327,7 +339,7 @@ void CResourceFile::LoadResources()
 				}
 				else if (_stricmp(pToken, "BREAK") == 0)
 				{
-					flag = FLAG_TYPE_BREAK;
+					bBreak = true;
 				}
 				break;
 			}
@@ -368,13 +380,13 @@ void CResourceFile::LoadResources()
 				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing hash failed on line %d\n", cline);
 				continue;
 			}
-			else if (strlen(cmdBufExec) <= 0 && (flag != FLAG_TYPE_IGNORE && flag != FLAG_TYPE_BREAK))
+			else if (strlen(cmdBufExec) <= 0 && (flag != FLAG_TYPE_IGNORE && !bBreak))
 			{
 				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing command line is empty on line %d\n", cline);
 				continue;
 			}
 
-			AddElement(filename, cmdBufExec, flag, *(uint32 *)&hash[0], cline);
+			AddElement(filename, cmdBufExec, flag, *(uint32 *)&hash[0], cline, bBreak);
 		}
 		else if (pToken != NULL || argc > ARG_TYPE_FILE_NAME)
 		{
@@ -450,9 +462,9 @@ const char *CResourceFile::GetNextToken(char **pbuf)
 	return res;
 }
 
-void CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line)
+void CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak)
 {
-	auto nRes = new CResourceBuffer(filename, cmdExec, flag, hash, line);
+	auto nRes = new CResourceBuffer(filename, cmdExec, flag, hash, line, bBreak);
 
 	// to mark files which are not required to add to the resource again
 	for (auto iter = m_resourceList.cbegin(), end = m_resourceList.cend(); iter != end; ++iter)
@@ -513,9 +525,6 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 
 		switch (typeFind)
 		{
-		case FLAG_TYPE_BREAK:
-			/* empty */
-			break;
 		case FLAG_TYPE_IGNORE:
 			tempResourceList.push_back(pRes);
 			break;
@@ -568,13 +577,14 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 			if (hashFoundFile == NULL)
 				hashFoundFile = "null";
 
-			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%d), prevhash: (%x), (%s), prevfiles: (%s), findathash: (%s)", pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash, pSenderClient->GetName(), prevHashFoundFile, hashFoundFile);
+			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%d), prevhash: (%x), (%s), prevfiles: (%s), findathash: (%s), md5hex: (%x)", pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash, pSenderClient->GetName(), prevHashFoundFile, hashFoundFile, swap_endian(hash));
 		}
 
 		bHandled = true;
 	}
 
 	m_PrevHash = hash;
+	AddFileResponse(pSenderClient, resource->szFileName, hash);
 	return !bHandled;
 }
 
@@ -599,7 +609,7 @@ void ClearStringsCache()
 	StringsCache.clear();
 }
 
-CResourceBuffer::CResourceBuffer(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line)
+CResourceBuffer::CResourceBuffer(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak)
 {
 	m_FileName = DuplicateString(filename);
 	m_CmdExec = (cmdExec[0] != '\0') ? DuplicateString(cmdExec) : NULL;
@@ -609,6 +619,7 @@ CResourceBuffer::CResourceBuffer(char *filename, char *cmdExec, flag_type_resour
 	m_Flag = flag;
 	m_FileHash = hash;
 	m_Line = line;
+	m_Break = bBreak;
 }
 
 CResourceFile::ResponseBuffer::ResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash)

@@ -13,18 +13,37 @@ bool OnMetaAttach()
 	// initialize resource config
 	Resource.Init();
 
-	// set force cvar on own value and replacement of original
-	// NOTE: in gamedll used this cvar not through a pointer thus we create own cvar for gamedll with default values
-	// so for engine set it the cvar values is 1.
-	pcv_consistency_old = g_engfuncs.pfnCVarGetPointer("mp_consistency");
+	// if have already registered take it
+	cvar_t *pcv_consistency_prev = g_engfuncs.pfnCVarGetPointer("mp_consistency_");
 
-	cv_mp_consistency.value = pcv_consistency_old->value;
-	cv_mp_consistency.string = pcv_consistency_old->string;
-	cv_mp_consistency.flags = pcv_consistency_old->flags;
-	cv_mp_consistency.name = pcv_consistency_old->name;
-	pcv_consistency_old->name = "mp_consistency_";
+	if (pcv_consistency_prev != NULL)
+	{
+		pcv_consistency_old = g_engfuncs.pfnCVarGetPointer("mp_consistency");
 
-	g_engfuncs.pfnCVarRegister(&cv_mp_consistency);
+		const char *tempName = pcv_consistency_old->name;
+		pcv_consistency_old->name = pcv_consistency_prev->name;
+
+		pcv_consistency_prev->value = pcv_consistency_old->value;
+		pcv_consistency_prev->string = pcv_consistency_old->string;
+		pcv_consistency_prev->flags = pcv_consistency_old->flags;
+		pcv_consistency_prev->name = tempName;
+	}
+	else
+	{
+		// set force cvar on own value and replacement of original
+		// NOTE: in gamedll used this cvar not through a pointer thus we create own cvar for gamedll with default values
+		// so for engine set it the cvar values is 1.
+		pcv_consistency_old = g_engfuncs.pfnCVarGetPointer("mp_consistency");
+
+		cv_mp_consistency.value = pcv_consistency_old->value;
+		cv_mp_consistency.string = pcv_consistency_old->string;
+		cv_mp_consistency.flags = pcv_consistency_old->flags;
+		cv_mp_consistency.name = pcv_consistency_old->name;
+
+		pcv_consistency_old->name = STRING(ALLOC_STRING("mp_consistency_"));
+		g_engfuncs.pfnCVarRegister(&cv_mp_consistency);
+	}
+
 	g_engfuncs.pfnCvar_DirectSet(pcv_consistency_old, "1");
 
 	// to remove the old cvar of cvars list
@@ -57,12 +76,13 @@ void OnMetaDetach()
 	cvar_t *pcv_mp_consistency = g_engfuncs.pfnCVarGetPointer("mp_consistency");
 
 	// to restore the pointer address of a string
+	const char *tempName = pcv_consistency_old->name;
 	pcv_consistency_old->name = cv_mp_consistency.name;
 	g_engfuncs.pfnCvar_DirectSet(pcv_consistency_old, pcv_mp_consistency->string);
+	pcv_mp_consistency->name = tempName;
 
 	// restore old cvar mp_consistency
 	cvar_t *cvar_vars = g_RehldsApi->GetFuncs()->GetCvarVars();
-
 	for (cvar_t *var = cvar_vars, *prev = NULL; var != NULL; prev = var, var = var->next)
 	{
 		if (var == pcv_mp_consistency)

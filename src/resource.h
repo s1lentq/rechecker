@@ -1,9 +1,7 @@
 #pragma once
 
 #define FILE_INI_RESOURCES	"resources.ini"
-
 #define MAX_CMD_LENGTH		128
-#define MAX_RESOURCE_LIST	1280
 
 enum flag_type_resources
 {
@@ -11,7 +9,6 @@ enum flag_type_resources
 	FLAG_TYPE_EXISTS,		// to comparison with the specified hash value
 	FLAG_TYPE_MISSING,		// check it missing file on client
 	FLAG_TYPE_IGNORE,		// ignore the specified hash value
-	FLAG_TYPE_BREAK,		// do not check a next files
 	FLAG_TYPE_HASH_ANY,		// any file with any the hash value
 };
 
@@ -29,7 +26,7 @@ enum arg_type_e
 class CResourceBuffer
 {
 public:
-	CResourceBuffer(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line);
+	CResourceBuffer(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak);
 
 	uint32 GetFileHash() const { return m_FileHash; };
 	flag_type_resources GetFileFlag() const { return m_Flag; };
@@ -38,6 +35,7 @@ public:
 	const char *GetCmdExec() const { return m_CmdExec; };
 	int GetLine() const { return m_Line; };
 
+	bool IsBreak() const { return m_Break; };
 	bool IsDuplicate() const { return m_Duplicate; };
 	void SetDuplicate() { m_Duplicate = true; };
 
@@ -49,7 +47,9 @@ private:
 
 	const char *m_FileName;
 	const char *m_CmdExec;
-	bool m_Duplicate;
+
+	bool m_Duplicate;	// for to check for duplicate
+	bool m_Break;		// do not check a next files
 };
 
 class CResourceFile
@@ -82,7 +82,7 @@ private:
 
 private:
 	// for temporary files of responses
-	void AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line);
+	void AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak);
 	void AddFileResponse(IGameClient *pSenderClient, char *filename, uint32 hash);
 	const char *FindFilenameOfHash(uint32 hash);
 	void LogPrepare();

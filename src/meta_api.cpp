@@ -4,7 +4,7 @@ plugin_info_t Plugin_info =
 {
 	META_INTERFACE_VERSION,
 	"Rechecker",
-	"1.1",
+	"1.2",
 	__DATE__,
 	"s1lent",
 	"http://www.dedicated-server.ru/",
@@ -30,7 +30,7 @@ C_DLLEXPORT int Meta_Query(char *, plugin_info_t **pPlugInfo, mutil_funcs_t *pMe
 	*pPlugInfo = &(Plugin_info);
 	gpMetaUtilFuncs = pMetaUtilFuncs;
 
-	return 1;
+	return TRUE;
 }
 
 C_DLLEXPORT int Meta_Attach(PLUG_LOADTIME now, META_FUNCTIONS *pFunctionTable, meta_globals_t *pMGlobals, gamedll_funcs_t *pGamedllFuncs)
@@ -40,7 +40,7 @@ C_DLLEXPORT int Meta_Attach(PLUG_LOADTIME now, META_FUNCTIONS *pFunctionTable, m
 
 	if (!OnMetaAttach())
 	{
-		return 0;
+		return FALSE;
 	}
 	
 	gMetaFunctionTable.pfnGetEntityAPI2 = GetEntityAPI2;
@@ -48,11 +48,11 @@ C_DLLEXPORT int Meta_Attach(PLUG_LOADTIME now, META_FUNCTIONS *pFunctionTable, m
 
 	memcpy(pFunctionTable, &gMetaFunctionTable, sizeof(META_FUNCTIONS));
 
-	return 1;
+	return TRUE;
 }
 
 C_DLLEXPORT int Meta_Detach(PLUG_LOADTIME now, PL_UNLOAD_REASON reason)
 {
 	OnMetaDetach();
-	return 1;
+	return TRUE;
 }

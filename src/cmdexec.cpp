@@ -37,6 +37,8 @@ void StringReplace(char *src, const char *strold, const char *strnew)
 	}
 }
 
+extern uint32 swap_endian(uint32 value);
+
 char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
 {
 	int len;
@@ -55,6 +57,7 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	// replace key values
 	StringReplace(string, "[file_name]", pResource->GetFileName());
 	StringReplace(string, "[file_hash]", UTIL_VarArgs("%x", responseHash));
+	StringReplace(string, "[file_md5hash]", UTIL_VarArgs("%x", swap_endian(responseHash)));
 
 	// replace of templates for identification
 	StringReplace(string, "[userid]", UTIL_VarArgs("#%u", g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict())));
@@ -62,9 +65,9 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	StringReplace(string, "[ip]", UTIL_VarArgs("%i.%i.%i.%i", net->ip[0], net->ip[1], net->ip[2], net->ip[3]));
 	StringReplace(string, "[name]", pClient->GetName());
 
-	if (string != NULL && string[0] != '\0')
+	if (string[0] != '\0')
 	{
-		Resource.Log(" -> ExecuteCMD: (%s), for (%s)", string, pClient->GetName());
+		Resource.Log("  -> ExecuteCMD: (%s), for (%s)", string, pClient->GetName());
 	}
 
 	len = strlen(string);
@@ -111,12 +114,13 @@ void CExecMngr::CommandExecute(IGameClient *pClient)
 				// execute cmdexec
 				SERVER_COMMAND(cmdExec);
 			}
+
+			bBreak = pRes->IsBreak();
 		}
 
 		// erase cmdexec
 		delete pExec;
 		iter = m_execList.erase(iter);
-		bBreak = (pRes->GetFileFlag() == FLAG_TYPE_BREAK);
 	}
 }
 
