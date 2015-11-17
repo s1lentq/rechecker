@@ -44,7 +44,7 @@ bool OnMetaAttach()
 	// register function from ReHLDS API
 	g_RehldsApi->GetHookchains()->SV_DropClient()->registerHook(&SV_DropClient);
 	g_RehldsApi->GetHookchains()->SV_ActivateServer()->registerHook(&SV_ActivateServer);
-	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponce()->registerHook(&SV_CheckConsistencyResponce);
+	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponse()->registerHook(&SV_CheckConsistencyResponse);
 
 	SV_AddResource = g_RehldsApi->GetFuncs()->SV_AddResource;
 
@@ -81,7 +81,7 @@ void OnMetaDetach()
 
 	g_RehldsApi->GetHookchains()->SV_DropClient()->unregisterHook(&SV_DropClient);
 	g_RehldsApi->GetHookchains()->SV_ActivateServer()->unregisterHook(&SV_ActivateServer);
-	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponce()->unregisterHook(&SV_CheckConsistencyResponce);
+	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponse()->unregisterHook(&SV_CheckConsistencyResponse);
 }
 
 void ServerDeactivate_Post()
@@ -97,6 +97,9 @@ void SV_DropClient(IRehldsHook_SV_DropClient *chain, IGameClient *pClient, bool 
 {
 	// clear buffer cmdexec the client when was disconnected up to perform cmdexec
 	Exec.Clear(pClient);
+
+	// clear temporary files of response
+	Resource.Clear(pClient);
 
 	// call next hook
 	chain->callNext(pClient, crash, string);
@@ -123,12 +126,16 @@ void ClientPutInServer_Post(edict_t *pEntity)
 
 	// client is connected to putinserver, go execute cmd out buffer
 	Exec.CommandExecute(pClient);
+
+	// clear temporary files of response
+	Resource.Clear(pClient);
+
 	SET_META_RESULT(MRES_IGNORED);
 }
 
-bool SV_CheckConsistencyResponce(IRehldsHook_SV_CheckConsistencyResponce *chain, IGameClient *pSenderClient, resource_t *resource, uint32 hash)
+bool SV_CheckConsistencyResponse(IRehldsHook_SV_CheckConsistencyResponse *chain, IGameClient *pSenderClient, resource_t *resource, uint32 hash)
 {
-	if (!Resource.FileConsistencyResponce(pSenderClient, resource, hash))
+	if (!Resource.FileConsistencyResponse(pSenderClient, resource, hash))
 		return false;
 
 	// call next hook and take return of values from original func

@@ -25,6 +25,7 @@ enum arg_type_e
 	MAX_PARSE_ARGUMENT,
 };
 
+// buffer for checker list
 class CResourceBuffer
 {
 public:
@@ -55,15 +56,35 @@ class CResourceFile
 {
 public:
 	void Init();
-	void Clear();
+	void Clear(IGameClient *pClient = NULL);
 	void LoadResources();
 	void CreateResourceList();
 	void Log(const char *fmt, ...);
 
-	bool FileConsistencyResponce(IGameClient *pSenderClient, resource_t *resource, uint32 hash);
+	bool FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash);
 
 private:
+	// buffer for response list
+	class ResponseBuffer
+	{
+	public:
+		ResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash);
+
+		IGameClient *GetGameClient() const { return m_pClient; };
+		const char *GetFileName() const { return m_FileName; };
+		uint32 GetClientHash() const { return m_ClientHash; };
+
+	private:
+		IGameClient *m_pClient;
+		const char *m_FileName;
+		uint32 m_ClientHash;
+	};
+
+private:
+	// for temporary files of responses
 	void AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line);
+	void AddFileResponse(IGameClient *pSenderClient, char *filename, uint32 hash);
+	const char *FindFilenameOfHash(uint32 hash);
 	void LogPrepare();
 
 	// parse
@@ -71,16 +92,16 @@ private:
 
 private:
 	typedef std::vector<CResourceBuffer *> ResourceList;
+	typedef std::vector<ResponseBuffer *> ResponseList;
+
 	ResourceList m_resourceList;
+	ResponseList m_responseList;
 
 	int m_DecalsNum;
 	uint32 m_PrevHash;
 
 	char m_PathDir[MAX_PATH_LENGTH];
-
-	// log data
-	char m_LogFilePath[MAX_PATH_LENGTH];
-	char m_LogDate[64];
+	char m_LogFilePath[MAX_PATH_LENGTH];	// log data
 };
 
 extern CResourceFile Resource;

@@ -36,8 +36,30 @@ void CResourceFile::CreateResourceList()
 	g_RehldsServerData->SetConsistencyNum(nConsistency);
 }
 
-void CResourceFile::Clear()
+void CResourceFile::Clear(IGameClient *pClient)
 {
+	if (pClient != NULL)
+	{
+		auto iter = m_responseList.begin();
+		while (iter != m_responseList.end())
+		{
+			ResponseBuffer *pFiles = (*iter);
+
+			if (pFiles->GetGameClient() != pClient)
+			{
+				iter++;
+				continue;
+			}
+
+			// erase cmdexec
+			delete pFiles;
+			iter = m_responseList.erase(iter);
+		}
+
+		m_PrevHash = 0;
+		return;
+	}
+
 	m_PrevHash = 0;
 	m_DecalsNum = 0;
 
@@ -49,14 +71,17 @@ void CResourceFile::Clear()
 
 void CResourceFile::Log(const char *fmt, ...)
 {
-	if (pcv_rch_log->string[0] != '1')
-		return;
-
 	static char string[2048];
 
 	FILE *fp;
+	time_t td;
+	tm *lt;
 	char *file;
+	char dateLog[64];
 	bool bFirst = false;
+
+	if (pcv_rch_log->string[0] != '1')
+		return;
 
 	fp = fopen(m_LogFilePath, "r");
 
@@ -79,16 +104,22 @@ void CResourceFile::Log(const char *fmt, ...)
 	va_end(argptr);
 
 	strcat(string, "\n");
+
+	td = time(NULL);
+	lt = localtime(&td);
+
+	strftime(dateLog, sizeof(dateLog), "%m/%d/%Y - %H:%M:%S", lt);
+
 	if (!bFirst)
 	{
 		file = strrchr(m_LogFilePath, '/');
 		if (file == NULL)
-			file = "null";
+			file = "<null>";
 
-		fprintf(fp, "L %s: Log file started (file \"%s\") (version \"%s\")\n", m_LogDate, file, Plugin_info.version);
+		fprintf(fp, "L %s: Log file started (file \"%s\") (version \"%s\")\n", dateLog, file, Plugin_info.version);
 	}
 
-	fprintf(fp, "L %s: %s", m_LogDate, string);
+	fprintf(fp, "L %s: %s", dateLog, string);
 	fclose(fp);
 }
 
@@ -194,7 +225,6 @@ void CResourceFile::LogPrepare()
 	}
 
 	strftime(dateFile, sizeof(dateFile), "L_%d_%m_%Y.log", lt);
-	strftime(m_LogDate, sizeof(m_LogDate), "%m/%d/%Y - %H:%M:%S", lt);
 	strcat(m_LogFilePath, dateFile);
 }
 
@@ -338,7 +368,6 @@ void CResourceFile::LoadResources()
 				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing hash failed on line %d\n", cline);
 				continue;
 			}
-			// TODO: is there a need to flag FLAG_TYPE_BREAK without cmdexec?
 			else if (strlen(cmdBufExec) <= 0 && (flag != FLAG_TYPE_IGNORE && flag != FLAG_TYPE_BREAK))
 			{
 				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing command line is empty on line %d\n", cline);
@@ -441,12 +470,24 @@ void CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resource
 	m_resourceList.push_back(nRes);
 }
 
-bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource_t *resource, uint32 hash)
+void CResourceFile::AddFileResponse(IGameClient *pSenderClient, char *filename, uint32 hash)
 {
+	m_responseList.push_back(new ResponseBuffer(pSenderClient, filename, hash));
+}
+
+bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash)
+{
+	bool bHandled = false;
+	flag_type_resources typeFind;
+	std::vector<CResourceBuffer *> tempResourceList;
+	const char *hashFoundFile;
+	const char *prevHashFoundFile;
+
 	if (resource->type != t_decal
 		|| resource->nIndex < m_DecalsNum)	// if by some miracle the decals will have the flag RES_CHECKFILE
 							// to be sure not bypass the decals
 	{
+		AddFileResponse(pSenderClient, resource->szFileName, hash);
 		m_PrevHash = hash;
 		return true;
 	}
@@ -457,10 +498,6 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 	{
 		return true;
 	}
-
-	bool bHandled = false;
-	flag_type_resources typeFind;
-	std::vector<CResourceBuffer *> tempResourceList;
 
 	for (auto iter = m_resourceList.cbegin(), end = m_resourceList.cend(); iter != end; ++iter)
 	{
@@ -516,13 +553,22 @@ bool CResourceFile::FileConsistencyResponce(IGameClient *pSenderClient, resource
 
 		if (typeFind != FLAG_TYPE_NONE)
 		{
-			// TODO: what is?
 			if (hash != 0x0)
 			{
 				// push exec cmd
 				Exec.AddElement(pSenderClient, pRes, hash);
 			}
-			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%d), prevhash: (%x), (%s)", pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash, pSenderClient->GetName());
+
+			hashFoundFile = FindFilenameOfHash(hash);
+			prevHashFoundFile = FindFilenameOfHash(m_PrevHash);
+
+			if (prevHashFoundFile == NULL)
+				prevHashFoundFile = "null";
+
+			if (hashFoundFile == NULL)
+				hashFoundFile = "null";
+
+			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%d), prevhash: (%x), (%s), prevfiles: (%s), findathash: (%s)", pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash, pSenderClient->GetName(), prevHashFoundFile, hashFoundFile);
 		}
 
 		bHandled = true;
@@ -564,3 +610,22 @@ CResourceBuffer::CResourceBuffer(char *filename, char *cmdExec, flag_type_resour
 	m_FileHash = hash;
 	m_Line = line;
 }
+
+CResourceFile::ResponseBuffer::ResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash)
+{
+	m_pClient = pSenderClient;
+	m_FileName = DuplicateString(filename);
+	m_ClientHash = hash;
+}
+
+const char *CResourceFile::FindFilenameOfHash(uint32 hash)
+{
+	for (auto iter = m_responseList.begin(), end = m_responseList.end(); iter != end; ++iter)
+	{
+		if ((*iter)->GetClientHash() == hash)
+			return (*iter)->GetFileName();
+	}
+
+	return NULL;
+}
+

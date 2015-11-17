@@ -4,6 +4,7 @@
 	#pragma warning(disable : 4005)
 #else
 	#define _stricmp strcasecmp
+	#define _mkdir mkdir
 	// Deail with stupid macro in kernel.h
 	#undef __FUNCTION__
 #endif // _WIN32

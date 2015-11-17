@@ -62,6 +62,11 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	StringReplace(string, "[ip]", UTIL_VarArgs("%i.%i.%i.%i", net->ip[0], net->ip[1], net->ip[2], net->ip[3]));
 	StringReplace(string, "[name]", pClient->GetName());
 
+	if (string != NULL && string[0] != '\0')
+	{
+		Resource.Log(" -> ExecuteCMD: (%s), for (%s)", string, pClient->GetName());
+	}
+
 	len = strlen(string);
 
 	if (len < sizeof(string) - 2)
@@ -96,15 +101,16 @@ void CExecMngr::CommandExecute(IGameClient *pClient)
 			break;
 		}
 
-		char *cmdExec = GetExecCmdPrepare(pClient, pRes, pExec->GetClientHash());
-
-		if (!bBreak // erase all cmdexec because have flag is break
-			&& cmdExec != NULL && cmdExec[0] != '\0')
+		// erase all cmdexec because have flag is break
+		if (!bBreak)
 		{
-			Resource.Log(" -> ExecuteCMD: (%s), for (%s)", cmdExec, pClient->GetName());
+			char *cmdExec = GetExecCmdPrepare(pClient, pRes, pExec->GetClientHash());
 
-			// execute cmdexec
-			SERVER_COMMAND(cmdExec);
+			if (cmdExec != NULL && cmdExec[0] != '\0')
+			{
+				// execute cmdexec
+				SERVER_COMMAND(cmdExec);
+			}
 		}
 
 		// erase cmdexec
