@@ -37,8 +37,6 @@ void StringReplace(char *src, const char *strold, const char *strnew)
 	}
 }
 
-extern uint32 swap_endian(uint32 value);
-
 char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
 {
 	int len;
@@ -57,7 +55,7 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	// replace key values
 	StringReplace(string, "[file_name]", pResource->GetFileName());
 	StringReplace(string, "[file_hash]", UTIL_VarArgs("%x", responseHash));
-	StringReplace(string, "[file_md5hash]", UTIL_VarArgs("%x", swap_endian(responseHash)));
+	StringReplace(string, "[file_md5hash]", UTIL_VarArgs("%x", _byteswap_ulong(responseHash)));
 
 	// replace of templates for identification
 	StringReplace(string, "[userid]", UTIL_VarArgs("#%u", g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict())));

@@ -67,6 +67,10 @@ public:
 	virtual bool IsConnected() = 0;
 	virtual void SetConnected(bool connected) = 0;
 
+	virtual uint32 GetVoiceStream(int stream_id) = 0;
+	virtual void SetLastVoiceTime(double time) = 0;
+	virtual double GetLastVoiceTime() = 0;
+	virtual bool GetLoopback() = 0;
 
 	// this must be the last virtual function in class
 #ifdef REHLDS_SELF
@@ -117,4 +121,8 @@ public:
 	virtual int GetConsistencyNum() = 0;
 	virtual int GetResourcesNum() = 0;
 	virtual int GetDecalNameNum() = 0;
+
+	virtual double GetTime() = 0;
+	virtual void SetResourcesNum(int num) = 0;
+	virtual struct resource_s *GetResource(int index) = 0;
 };

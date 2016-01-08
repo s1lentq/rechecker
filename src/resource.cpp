@@ -9,7 +9,7 @@ cvar_t *pcv_rch_log = NULL;
 void CResourceFile::CreateResourceList()
 {
 	int nConsistency = g_RehldsServerData->GetConsistencyNum();
-	m_DecalsNum = g_RehldsServerData->GetDecalNameNum();
+	/*m_DecalsNum = g_RehldsServerData->GetDecalNameNum();*/
 
 	for (auto iter = m_resourceList.cbegin(), end = m_resourceList.cend(); iter != end; ++iter)
 	{
@@ -26,14 +26,52 @@ void CResourceFile::CreateResourceList()
 				break;
 			}
 
+			// check limit consistency
+			if (nConsistency >= MAX_CONSISTENCY_LIST)
+			{
+				UTIL_Printf(__FUNCTION__ ": can't add consistency \"%s\" on line %d; exceeded the limit of consistency max '%d'\n", pRes->GetFileName(), pRes->GetLine(), MAX_CONSISTENCY_LIST);
+				break;
+			}
+
 			Log(__FUNCTION__ "  -> file: (%s), cmdexc: (%s), hash: (%x)", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetFileHash());
-			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, m_DecalsNum++);
+			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, 4095/*m_DecalsNum++*/);
 			nConsistency++;
 		}
 	}
 
-	m_DecalsNum = g_RehldsServerData->GetDecalNameNum();
+	/*m_DecalsNum = g_RehldsServerData->GetDecalNameNum();*/
 	g_RehldsServerData->SetConsistencyNum(nConsistency);
+
+	// sort
+	std::vector<resource_t *> sortList;
+
+	for (int i = 0; i < g_RehldsServerData->GetResourcesNum(); ++i)
+	{
+		resource_t *r = g_RehldsServerData->GetResource(i);
+		sortList.push_back(new resource_t(*r));
+	}
+
+	// Start a first resource list
+	g_RehldsServerData->SetResourcesNum(0);
+
+	class SortFiles
+	{
+	public:
+		bool operator()(const resource_t *a, const resource_t *b) const
+		{
+			return (a->ucFlags & RES_CHECKFILE) != 0;
+		}
+	};
+
+	// sort by flag RES_CHECKFILE
+	std::sort(sortList.begin(), sortList.end(), SortFiles());
+
+	for (auto iter = sortList.cbegin(), end = sortList.cend(); iter != end; ++iter)
+	{
+		// Add new resource in the own order
+		resource_t *r = (*iter);
+		SV_AddResource(r->type, r->szFileName, r->nDownloadSize, r->ucFlags, r->nIndex);
+	}
 }
 
 void CResourceFile::Clear(IGameClient *pClient)
@@ -43,7 +81,7 @@ void CResourceFile::Clear(IGameClient *pClient)
 		auto iter = m_responseList.begin();
 		while (iter != m_responseList.end())
 		{
-			ResponseBuffer *pFiles = (*iter);
+			CResponseBuffer *pFiles = (*iter);
 
 			if (pFiles->GetGameClient() != pClient)
 			{
@@ -61,10 +99,11 @@ void CResourceFile::Clear(IGameClient *pClient)
 	}
 
 	m_PrevHash = 0;
-	m_DecalsNum = 0;
+	/*m_DecalsNum = 0;*/
 
 	// clear resources
 	m_resourceList.clear();
+	m_responseList.clear();
 
 	ClearStringsCache();
 }
@@ -157,16 +196,6 @@ void CResourceFile::Init()
 
 	g_engfuncs.pfnCvar_RegisterVariable(&cv_rch_log);
 	pcv_rch_log = g_engfuncs.pfnCVarGetPointer(cv_rch_log.name);
-}
-
-uint32 __declspec(naked) swap_endian(uint32 value)
-{
-	__asm
-	{
-		mov eax, dword ptr[esp + 4]
-		bswap eax
-		ret
-	}
 }
 
 inline uint8 hexbyte(uint8 *hex)
@@ -300,12 +329,16 @@ void CResourceFile::LoadResources()
 				{
 					flag = FLAG_TYPE_HASH_ANY;
 				}
+				else if (_stricmp((const char *)pbuf, "MISSING") == 0)
+				{
+					flag = FLAG_TYPE_MISSING;
+				}
 				else
 				{
 					for (int i = 0; i < sizeof(pbuf) / 2; i++)
 						hash[i] = hexbyte(&pbuf[i * 2]);
 
-					flag = (*(uint32 *)&hash[0] != 0x00000000) ? FLAG_TYPE_EXISTS : FLAG_TYPE_MISSING;
+					flag = FLAG_TYPE_EXISTS;
 				}
 				break;
 			}
@@ -357,40 +390,39 @@ void CResourceFile::LoadResources()
 			}
 		}
 
+		#define LOG_PRINT_FAILED(str, argv)\
+			UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; " str, argv);\
+			continue;
+
 		if (argc >= MAX_PARSE_ARGUMENT)
 		{
 			char pchar;
 			if (strlen(filename) <= 0)
 			{
-				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; path to filename is empty on line %d\n", cline);
-				continue;
+				LOG_PRINT_FAILED("path to filename is empty on line %d\n", cline);
 			}
 			else if (!IsFileHasExtension(filename))
 			{
-				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; filename has no extension on line %d\n", cline);
-				continue;
+				LOG_PRINT_FAILED("filename has no extension on line %d\n", cline);
 			}
 			else if (!IsValidFilename(filename, pchar))
 			{
-				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; filename has invalid character '%c' on line %d\n", pchar, cline);
-				continue;
+				LOG_PRINT_FAILED("filename has invalid character '%c' on line %d\n", (pchar, cline));
 			}
 			else if (flag == FLAG_TYPE_NONE)
 			{
-				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing hash failed on line %d\n", cline);
-				continue;
+				LOG_PRINT_FAILED("parsing hash failed on line %d\n", cline);
 			}
 			else if (strlen(cmdBufExec) <= 0 && (flag != FLAG_TYPE_IGNORE && !bBreak))
 			{
-				UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing command line is empty on line %d\n", cline);
-				continue;
+				LOG_PRINT_FAILED("parsing command line is empty on line %d\n", cline);
 			}
 
 			AddElement(filename, cmdBufExec, flag, *(uint32 *)&hash[0], cline, bBreak);
 		}
 		else if (pToken != NULL || argc > ARG_TYPE_FILE_NAME)
 		{
-			UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; parsing not enough arguments on line %d (got '%d', expected '%d')\n", cline, argc, MAX_PARSE_ARGUMENT);
+			LOG_PRINT_FAILED("parsing not enough arguments on line %d (got '%d', expected '%d')\n", (cline, argc, MAX_PARSE_ARGUMENT));
 		}
 	}
 
@@ -470,7 +502,7 @@ void CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resource
 	for (auto iter = m_resourceList.cbegin(), end = m_resourceList.cend(); iter != end; ++iter)
 	{
 		CResourceBuffer *pRes = (*iter);
-		
+
 		if (_stricmp(pRes->GetFileName(), filename) == 0)
 		{
 			// resource name already registered
@@ -484,7 +516,7 @@ void CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resource
 
 void CResourceFile::AddFileResponse(IGameClient *pSenderClient, char *filename, uint32 hash)
 {
-	m_responseList.push_back(new ResponseBuffer(pSenderClient, filename, hash));
+	m_responseList.push_back(new CResponseBuffer(pSenderClient, filename, hash));
 }
 
 bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash)
@@ -492,12 +524,10 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 	bool bHandled = false;
 	flag_type_resources typeFind;
 	std::vector<CResourceBuffer *> tempResourceList;
-	const char *hashFoundFile;
-	const char *prevHashFoundFile;
 
 	if (resource->type != t_decal
-		|| resource->nIndex < m_DecalsNum)	// if by some miracle the decals will have the flag RES_CHECKFILE
-							// to be sure not bypass the decals
+		|| resource->nIndex != 4095/*< m_DecalsNum*/)	// if by some miracle the decals will have the flag RES_CHECKFILE
+								// to be sure not bypass the decals
 	{
 		AddFileResponse(pSenderClient, resource->szFileName, hash);
 		m_PrevHash = hash;
@@ -562,22 +592,12 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 
 		if (typeFind != FLAG_TYPE_NONE)
 		{
-			if (hash != 0x0)
-			{
-				// push exec cmd
-				Exec.AddElement(pSenderClient, pRes, hash);
-			}
+			// push exec cmd
+			Exec.AddElement(pSenderClient, pRes, hash);
 
-			hashFoundFile = FindFilenameOfHash(hash);
-			prevHashFoundFile = FindFilenameOfHash(m_PrevHash);
-
-			if (prevHashFoundFile == NULL)
-				prevHashFoundFile = "null";
-
-			if (hashFoundFile == NULL)
-				hashFoundFile = "null";
-
-			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%d), prevhash: (%x), (%s), prevfiles: (%s), findathash: (%s), md5hex: (%x)", pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash, pSenderClient->GetName(), prevHashFoundFile, hashFoundFile, swap_endian(hash));
+			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%d), prevhash: (%x), (%s), prevfile: (%s), findathash: (%s), md5hex: (%x)",
+				pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash, pSenderClient->GetName(),
+				FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), _byteswap_ulong(hash));
 		}
 
 		bHandled = true;
@@ -622,7 +642,7 @@ CResourceBuffer::CResourceBuffer(char *filename, char *cmdExec, flag_type_resour
 	m_Break = bBreak;
 }
 
-CResourceFile::ResponseBuffer::ResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash)
+CResourceFile::CResponseBuffer::CResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash)
 {
 	m_pClient = pSenderClient;
 	m_FileName = DuplicateString(filename);
@@ -637,6 +657,5 @@ const char *CResourceFile::FindFilenameOfHash(uint32 hash)
 			return (*iter)->GetFileName();
 	}
 
-	return NULL;
+	return "null";
 }
-

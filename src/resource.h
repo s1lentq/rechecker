@@ -65,10 +65,10 @@ public:
 
 private:
 	// buffer for response list
-	class ResponseBuffer
+	class CResponseBuffer
 	{
 	public:
-		ResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash);
+		CResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash);
 
 		IGameClient *GetGameClient() const { return m_pClient; };
 		const char *GetFileName() const { return m_FileName; };
@@ -92,7 +92,7 @@ private:
 
 private:
 	typedef std::vector<CResourceBuffer *> ResourceList;
-	typedef std::vector<ResponseBuffer *> ResponseList;
+	typedef std::vector<CResponseBuffer *> ResponseList;
 
 	ResourceList m_resourceList;
 	ResponseList m_responseList;

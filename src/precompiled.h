@@ -14,6 +14,7 @@
 #include <list>
 #include <vector>
 #include <cstring>		// strrchr
+#include <algorithm>		// std::sort
 
 #include <time.h>		// time, localtime etc
 #include <extdll.h>
@@ -24,6 +25,7 @@
 
 #include "rehlds_api.h"
 #include "engine_rehlds.h"
+#include "consistency.h"
 
 #include "main.h"
 //#include "task.h"
