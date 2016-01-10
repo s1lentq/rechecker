@@ -6,10 +6,10 @@ std::vector<const char *> StringsCache;
 cvar_t cv_rch_log = { "rch_log", "0", 0, 0.0f, NULL };
 cvar_t *pcv_rch_log = NULL;
 
-void CResourceFile::CreateResourceList()
+int CResourceFile::CreateResourceList()
 {
-	int nConsistency = g_RehldsServerData->GetConsistencyNum();
-	/*m_DecalsNum = g_RehldsServerData->GetDecalNameNum();*/
+	int nCustomConsistency = 0;
+	ComputeConsistencyFiles();
 
 	for (auto iter = m_resourceList.cbegin(), end = m_resourceList.cend(); iter != end; ++iter)
 	{
@@ -26,51 +26,69 @@ void CResourceFile::CreateResourceList()
 				break;
 			}
 
-			// check limit consistency
-			if (nConsistency >= MAX_CONSISTENCY_LIST)
+			// not allow to add a resource if the index is larger than 1024 or we will get Bad file data.
+			// https://github.com/dreamstalker/rehlds/blob/master/rehlds/engine/sv_user.cpp#L362
+			if (nCustomConsistency + m_ConsistencyNum >= MAX_RANGE_CONSISTENCY)
 			{
-				UTIL_Printf(__FUNCTION__ ": can't add consistency \"%s\" on line %d; exceeded the limit of consistency max '%d'\n", pRes->GetFileName(), pRes->GetLine(), MAX_CONSISTENCY_LIST);
+				UTIL_Printf(__FUNCTION__ ": can't add consistency \"%s\" on line %d; index out of bounds '%d'\n", pRes->GetFileName(), pRes->GetLine(), MAX_RANGE_CONSISTENCY);
 				break;
 			}
 
 			Log(__FUNCTION__ "  -> file: (%s), cmdexc: (%s), hash: (%x)", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetFileHash());
-			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, 4095/*m_DecalsNum++*/);
-			nConsistency++;
+			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, 4095);
+			++nCustomConsistency;
 		}
 	}
 
-	/*m_DecalsNum = g_RehldsServerData->GetDecalNameNum();*/
-	g_RehldsServerData->SetConsistencyNum(nConsistency);
-
-	// sort
-	std::vector<resource_t *> sortList;
+	std::vector<resource_t> sortList;
 
 	for (int i = 0; i < g_RehldsServerData->GetResourcesNum(); ++i)
 	{
-		resource_t *r = g_RehldsServerData->GetResource(i);
-		sortList.push_back(new resource_t(*r));
+		sortList.push_back(*g_RehldsServerData->GetResource(i));
 	}
 
 	// Start a first resource list
 	g_RehldsServerData->SetResourcesNum(0);
 
-	class SortFiles
+	// sort
+	std::sort(sortList.begin(), sortList.end(), [](const resource_t &a, const resource_t &b)
 	{
-	public:
-		bool operator()(const resource_t *a, const resource_t *b) const
+		if (!SV_FileInConsistencyList(b.szFileName, NULL))
 		{
-			return (a->ucFlags & RES_CHECKFILE) != 0;
-		}
-	};
+			// pre-sort the consistency files that which will have the flag RES_CHECKFILE.
+			if (SV_FileInConsistencyList(a.szFileName, NULL))
+				return true;
 
-	// sort by flag RES_CHECKFILE
-	std::sort(sortList.begin(), sortList.end(), SortFiles());
+			if ((a.ucFlags & RES_CHECKFILE) && !(b.ucFlags & RES_CHECKFILE))
+				return true;
+		}
+
+		return false;
+	});
 
 	for (auto iter = sortList.cbegin(), end = sortList.cend(); iter != end; ++iter)
 	{
 		// Add new resource in the own order
-		resource_t *r = (*iter);
-		SV_AddResource(r->type, r->szFileName, r->nDownloadSize, r->ucFlags, r->nIndex);
+		SV_AddResource(iter->type, iter->szFileName, iter->nDownloadSize, iter->ucFlags, iter->nIndex);
+	}
+
+	sortList.clear();
+	return nCustomConsistency;
+}
+
+void CResourceFile::ComputeConsistencyFiles()
+{
+	m_ConsistencyNum = 0;
+
+	for (int i = 0; i < g_RehldsServerData->GetResourcesNum(); ++i)
+	{
+		resource_t *r = g_RehldsServerData->GetResource(i);
+
+		if (r->ucFlags == (RES_CUSTOM | RES_REQUESTED | RES_UNK_6) || (r->ucFlags & RES_CHECKFILE))
+			continue;
+
+		if (SV_FileInConsistencyList(r->szFileName, NULL))
+			++m_ConsistencyNum;
 	}
 }
 
@@ -99,7 +117,7 @@ void CResourceFile::Clear(IGameClient *pClient)
 	}
 
 	m_PrevHash = 0;
-	/*m_DecalsNum = 0;*/
+	m_ConsistencyNum = 0;
 
 	// clear resources
 	m_resourceList.clear();
@@ -526,8 +544,8 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 	std::vector<CResourceBuffer *> tempResourceList;
 
 	if (resource->type != t_decal
-		|| resource->nIndex != 4095/*< m_DecalsNum*/)	// if by some miracle the decals will have the flag RES_CHECKFILE
-								// to be sure not bypass the decals
+		|| resource->nIndex != 4095)	// if by some miracle the decals will have the flag RES_CHECKFILE
+						// to be sure not bypass the decals
 	{
 		AddFileResponse(pSenderClient, resource->szFileName, hash);
 		m_PrevHash = hash;

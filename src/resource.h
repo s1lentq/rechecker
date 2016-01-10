@@ -2,6 +2,7 @@
 
 #define FILE_INI_RESOURCES	"resources.ini"
 #define MAX_CMD_LENGTH		128
+#define MAX_RANGE_CONSISTENCY	1024
 
 enum flag_type_resources
 {
@@ -58,7 +59,7 @@ public:
 	void Init();
 	void Clear(IGameClient *pClient = NULL);
 	void LoadResources();
-	void CreateResourceList();
+	int CreateResourceList();
 	void Log(const char *fmt, ...);
 
 	bool FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash);
@@ -87,6 +88,9 @@ private:
 	const char *FindFilenameOfHash(uint32 hash);
 	void LogPrepare();
 
+	// compute the total number of consistency files.
+	void ComputeConsistencyFiles();
+
 	// parse
 	const char *GetNextToken(char **pbuf);
 
@@ -97,7 +101,7 @@ private:
 	ResourceList m_resourceList;
 	ResponseList m_responseList;
 
-	int m_DecalsNum;
+	int m_ConsistencyNum;
 	uint32 m_PrevHash;
 
 	char m_PathDir[MAX_PATH_LENGTH];

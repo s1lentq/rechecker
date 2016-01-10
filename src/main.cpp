@@ -4,6 +4,7 @@ cvar_t cv_mp_consistency = { "mp_consistency", "0", 0, 0.0f, NULL };
 cvar_t *pcv_consistency_old = NULL;
 
 void (*SV_AddResource)(resourcetype_t type, const char *name, int size, unsigned char flags, int index);
+qboolean (*SV_FileInConsistencyList)(const char *filename, consistency_t **ppconsist);
 
 bool OnMetaAttach()
 {
@@ -62,10 +63,11 @@ bool OnMetaAttach()
 
 	// register function from ReHLDS API
 	g_RehldsApi->GetHookchains()->SV_DropClient()->registerHook(&SV_DropClient);
-	g_RehldsApi->GetHookchains()->SV_ActivateServer()->registerHook(&SV_ActivateServer);
 	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponse()->registerHook(&SV_CheckConsistencyResponse);
+	g_RehldsApi->GetHookchains()->SV_TransferConsistencyInfo()->registerHook(&SV_TransferConsistencyInfo);
 
 	SV_AddResource = g_RehldsApi->GetFuncs()->SV_AddResource;
+	SV_FileInConsistencyList = g_RehldsApi->GetFuncs()->SV_FileInConsistencyList;
 
 	// go to attach
 	return true;
@@ -100,8 +102,8 @@ void OnMetaDetach()
 	Resource.Clear();
 
 	g_RehldsApi->GetHookchains()->SV_DropClient()->unregisterHook(&SV_DropClient);
-	g_RehldsApi->GetHookchains()->SV_ActivateServer()->unregisterHook(&SV_ActivateServer);
 	g_RehldsApi->GetHookchains()->SV_CheckConsistencyResponse()->unregisterHook(&SV_CheckConsistencyResponse);
+	g_RehldsApi->GetHookchains()->SV_TransferConsistencyInfo()->unregisterHook(&SV_TransferConsistencyInfo);
 }
 
 void ServerDeactivate_Post()
@@ -125,14 +127,15 @@ void SV_DropClient(IRehldsHook_SV_DropClient *chain, IGameClient *pClient, bool 
 	chain->callNext(pClient, crash, string);
 }
 
-void SV_ActivateServer(IRehldsHook_SV_ActivateServer *chain, int runPhysics)
+int SV_TransferConsistencyInfo(IRehldsHook_SV_TransferConsistencyInfo *chain)
 {
 	Resource.LoadResources();
 
-	chain->callNext(runPhysics);
-
 	// add to the resource
-	Resource.CreateResourceList();
+	int nConsistency = Resource.CreateResourceList();
+
+	// returns the total number of consistency files
+	return chain->callNext() + nConsistency;
 }
 
 void ClientPutInServer_Post(edict_t *pEntity)
