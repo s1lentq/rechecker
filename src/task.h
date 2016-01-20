@@ -1,6 +1,6 @@
 #pragma once
 
-#define TASK_FREQUENCY_TIME	1.0f	// check frequency current tasks
+#define TASK_FREQUENCY_TIME	0.1f	// check frequency current tasks
 
 typedef void (*xtask_t)(IGameClient *);
 
@@ -34,3 +34,6 @@ private:
 };
 
 extern CTaskMngr Task;
+extern DLL_FUNCTIONS *g_pFunctionTable;
+
+extern void StartFrame();

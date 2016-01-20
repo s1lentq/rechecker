@@ -4,7 +4,7 @@ plugin_info_t Plugin_info =
 {
 	META_INTERFACE_VERSION,
 	"Rechecker",
-	"1.3",
+	"1.6",
 	__DATE__,
 	"s1lent",
 	"http://www.dedicated-server.ru/",

@@ -110,4 +110,7 @@ private:
 
 extern CResourceFile Resource;
 
+extern cvar_t *pcv_rch_log;
+extern cvar_t *pcv_rch_delay;
+
 void ClearStringsCache();

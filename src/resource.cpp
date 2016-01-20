@@ -4,7 +4,10 @@ CResourceFile Resource;
 std::vector<const char *> StringsCache;
 
 cvar_t cv_rch_log = { "rch_log", "0", 0, 0.0f, NULL };
+cvar_t cv_rch_delay = { "rch_delay", "0", 0, 0.0f, NULL };
+
 cvar_t *pcv_rch_log = NULL;
+cvar_t *pcv_rch_delay = NULL;
 
 int CResourceFile::CreateResourceList()
 {
@@ -17,7 +20,7 @@ int CResourceFile::CreateResourceList()
 
 		// prevent duplicate of filenames
 		// check if filename is been marked so do not add the resource again
-		if (!pRes->IsDuplicate())
+		if (!pRes->IsDuplicate() && !SV_FileInConsistencyList(pRes->GetFileName(), NULL))
 		{
 			// check limit resource
 			if (g_RehldsServerData->GetResourcesNum() >= MAX_RESOURCE_LIST)
@@ -213,7 +216,10 @@ void CResourceFile::Init()
 	snprintf(m_PathDir, sizeof(m_PathDir), "%s" FILE_INI_RESOURCES, path);
 
 	g_engfuncs.pfnCvar_RegisterVariable(&cv_rch_log);
+	g_engfuncs.pfnCvar_RegisterVariable(&cv_rch_delay);
+
 	pcv_rch_log = g_engfuncs.pfnCVarGetPointer(cv_rch_log.name);
+	pcv_rch_delay = g_engfuncs.pfnCVarGetPointer(cv_rch_delay.name);
 }
 
 inline uint8 hexbyte(uint8 *hex)
@@ -408,8 +414,8 @@ void CResourceFile::LoadResources()
 			}
 		}
 
-		#define LOG_PRINT_FAILED(str, argv)\
-			UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; " str, argv);\
+		#define LOG_PRINT_FAILED(str, ...)\
+			UTIL_Printf(__FUNCTION__ ": Failed to load \"" FILE_INI_RESOURCES "\"; " str, __VA_ARGS__);\
 			continue;
 
 		if (argc >= MAX_PARSE_ARGUMENT)
@@ -425,7 +431,7 @@ void CResourceFile::LoadResources()
 			}
 			else if (!IsValidFilename(filename, pchar))
 			{
-				LOG_PRINT_FAILED("filename has invalid character '%c' on line %d\n", (pchar, cline));
+				LOG_PRINT_FAILED("filename has invalid character '%c' on line %d\n", pchar, cline);
 			}
 			else if (flag == FLAG_TYPE_NONE)
 			{
@@ -440,7 +446,7 @@ void CResourceFile::LoadResources()
 		}
 		else if (pToken != NULL || argc > ARG_TYPE_FILE_NAME)
 		{
-			LOG_PRINT_FAILED("parsing not enough arguments on line %d (got '%d', expected '%d')\n", (cline, argc, MAX_PARSE_ARGUMENT));
+			LOG_PRINT_FAILED("parsing not enough arguments on line %d (got '%d', expected '%d')\n", cline, argc, MAX_PARSE_ARGUMENT);
 		}
 	}
 
@@ -613,8 +619,9 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 			// push exec cmd
 			Exec.AddElement(pSenderClient, pRes, hash);
 
-			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%d), prevhash: (%x), (%s), prevfile: (%s), findathash: (%s), md5hex: (%x)",
-				pRes->GetFileName(), pRes->GetFileHash(), hash, typeFind, m_PrevHash, pSenderClient->GetName(),
+			static const char *szTypeNames[] = { "none", "exists", "missing", "ignore", "hash_any" };
+			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%s), prevhash: (%x), (%s), prevfile: (%s), findathash: (%s), md5hex: (%x)",
+				pRes->GetFileName(), pRes->GetFileHash(), hash, szTypeNames[typeFind], m_PrevHash, pSenderClient->GetName(),
 				FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), _byteswap_ulong(hash));
 		}
 

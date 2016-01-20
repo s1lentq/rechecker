@@ -28,7 +28,7 @@
 #include "consistency.h"
 
 #include "main.h"
-//#include "task.h"
+#include "task.h"
 //#include "config.h"
 #include "resource.h"
 #include "cmdexec.h"

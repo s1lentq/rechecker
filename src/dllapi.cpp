@@ -4,7 +4,6 @@ DLL_FUNCTIONS *g_pFunctionTable;
 
 extern void ServerDeactivate_Post();
 extern void ClientPutInServer_Post(edict_t *pEntity);
-extern void StartFrame();
 
 static DLL_FUNCTIONS gFunctionTable =
 {

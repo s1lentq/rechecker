@@ -53,7 +53,7 @@ void CTaskMngr::Clear(IGameClient *pClient)
 {
 	if (pClient == NULL)
 	{
-		// reset next frame
+		// reset next frame on level change
 		m_nextFrame = 0;
 	}
 

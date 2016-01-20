@@ -99,6 +99,7 @@ void OnMetaDetach()
 
 	// clear
 	Exec.Clear();
+	Task.Clear();
 	Resource.Clear();
 
 	g_RehldsApi->GetHookchains()->SV_DropClient()->unregisterHook(&SV_DropClient);
@@ -110,6 +111,7 @@ void ServerDeactivate_Post()
 {
 	// clear
 	Exec.Clear();
+	Task.Clear();
 	Resource.Clear();
 
 	SET_META_RESULT(MRES_IGNORED);
@@ -119,6 +121,9 @@ void SV_DropClient(IRehldsHook_SV_DropClient *chain, IGameClient *pClient, bool 
 {
 	// clear buffer cmdexec the client when was disconnected up to perform cmdexec
 	Exec.Clear(pClient);
+
+	// to clear the current tasks
+	Task.Clear(pClient);
 
 	// clear temporary files of response
 	Resource.Clear(pClient);
@@ -138,6 +143,18 @@ int SV_TransferConsistencyInfo(IRehldsHook_SV_TransferConsistencyInfo *chain)
 	return chain->callNext() + nConsistency;
 }
 
+void TaskCommandExecute_Handler(IGameClient *pClient)
+{
+	if (!pClient->IsConnected())
+		return;
+
+	// client is connected to putinserver, go execute cmd out buffer
+	Exec.CommandExecute(pClient);
+
+	// clear temporary files of response
+	Resource.Clear(pClient);
+}
+
 void ClientPutInServer_Post(edict_t *pEntity)
 {
 	int nIndex = ENTINDEX(pEntity) - 1;
@@ -147,11 +164,19 @@ void ClientPutInServer_Post(edict_t *pEntity)
 
 	IGameClient *pClient = g_RehldsApi->GetServerStatic()->GetClient(nIndex);
 
-	// client is connected to putinserver, go execute cmd out buffer
-	Exec.CommandExecute(pClient);
+	if (pcv_rch_delay->value == 0.0f)
+	{
+		// client is connected to putinserver, go execute cmd out buffer
+		Exec.CommandExecute(pClient);
 
-	// clear temporary files of response
-	Resource.Clear(pClient);
+		// clear temporary files of response
+		Resource.Clear(pClient);
+	}
+	else
+	{
+		// hold to execute cmd
+		Task.AddTask(pClient, pcv_rch_delay->value, (xtask_t)TaskCommandExecute_Handler);
+	}
 
 	SET_META_RESULT(MRES_IGNORED);
 }
@@ -163,4 +188,10 @@ bool SV_CheckConsistencyResponse(IRehldsHook_SV_CheckConsistencyResponse *chain,
 
 	// call next hook and take return of values from original func
 	return chain->callNext(pSenderClient, resource, hash);
+}
+
+void StartFrame()
+{
+	Task.StartFrame();
+	SET_META_RESULT(MRES_IGNORED);
 }

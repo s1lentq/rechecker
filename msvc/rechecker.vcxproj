@@ -168,6 +168,7 @@
     <ClInclude Include="..\src\engine_rehlds.h" />
     <ClInclude Include="..\src\main.h" />
     <ClInclude Include="..\src\precompiled.h" />
+    <ClInclude Include="..\src\task.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\parsemsg.cpp">
@@ -191,6 +192,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\src\sdk_util.cpp" />
+    <ClCompile Include="..\src\task.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\dist\config.ini" />
