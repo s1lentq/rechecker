@@ -7,6 +7,7 @@ CExecMngr::CBufExec::CBufExec(IGameClient *pClient, CResourceBuffer *pResource, 
 	m_pClient = pClient;
 	m_pResource = pResource;
 	m_ClientHash = responseHash;
+	m_UserID = g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict());
 }
 
 CExecMngr::CBufExec::~CBufExec()
@@ -40,6 +41,7 @@ void StringReplace(char *src, const char *strold, const char *strnew)
 char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
 {
 	int len;
+	int nUserID;
 	const netadr_t *net;
 	static char string[256];
 
@@ -51,6 +53,7 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	string[sizeof(string) - 1] = '\0';
 
 	net = pClient->GetNetChan()->GetRemoteAdr();
+	nUserID = g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict());
 
 	// replace key values
 	StringReplace(string, "[file_name]", pResource->GetFileName());
@@ -58,14 +61,14 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	StringReplace(string, "[file_md5hash]", UTIL_VarArgs("%x", _byteswap_ulong(responseHash)));
 
 	// replace of templates for identification
-	StringReplace(string, "[userid]", UTIL_VarArgs("#%u", g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict())));
+	StringReplace(string, "[userid]", UTIL_VarArgs("#%u", nUserID));
 	StringReplace(string, "[steamid]", UTIL_VarArgs("%s", g_engfuncs.pfnGetPlayerAuthId(pClient->GetEdict())));
 	StringReplace(string, "[ip]", UTIL_VarArgs("%i.%i.%i.%i", net->ip[0], net->ip[1], net->ip[2], net->ip[3]));
 	StringReplace(string, "[name]", pClient->GetName());
 
 	if (string[0] != '\0')
 	{
-		Resource.Log("  -> ExecuteCMD: (%s), for (%s)", string, pClient->GetName());
+		Resource.Log(LOG_NORMAL, "  -> ExecuteCMD: (%s), for (#%u)(%s)", string, nUserID, pClient->GetName());
 	}
 
 	len = strlen(string);
@@ -82,12 +85,13 @@ void CExecMngr::CommandExecute(IGameClient *pClient)
 {
 	bool bBreak = false;
 	auto iter = m_execList.begin();
-	
+	int nUserID = g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict());
+
 	while (iter != m_execList.end())
 	{
 		CBufExec *pExec = (*iter);
 
-		if (pExec->GetGameClient() != pClient)
+		if (pExec->GetUserID() != nUserID)
 		{
 			iter++;
 			continue;
@@ -130,13 +134,14 @@ void CExecMngr::Clear(IGameClient *pClient)
 		return;
 	}
 
+	int nUserID = g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict());
 	auto iter = m_execList.begin();
 	while (iter != m_execList.end())
 	{
 		CBufExec *pExec = (*iter);
 
 		// erase cmdexec
-		if (pExec->GetGameClient() == pClient)
+		if (pExec->GetUserID() == nUserID)
 		{
 			delete pExec;
 			iter = m_execList.erase(iter);

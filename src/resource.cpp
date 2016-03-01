@@ -4,23 +4,24 @@ CResourceFile Resource;
 std::vector<const char *> StringsCache;
 
 cvar_t cv_rch_log = { "rch_log", "0", 0, 0.0f, NULL };
-cvar_t cv_rch_delay = { "rch_delay", "0", 0, 0.0f, NULL };
-
 cvar_t *pcv_rch_log = NULL;
-cvar_t *pcv_rch_delay = NULL;
+
+const char *szTypeNames[] = { "none", "exists", "missing", "ignore", "hash_any" };
 
 int CResourceFile::CreateResourceList()
 {
+	int startIndex = 4095;
 	int nCustomConsistency = 0;
+
 	ComputeConsistencyFiles();
 
-	for (auto iter = m_resourceList.cbegin(), end = m_resourceList.cend(); iter != end; ++iter)
+	for (auto iter = m_resourceList.begin(), end = m_resourceList.end(); iter != end; ++iter)
 	{
 		CResourceBuffer *pRes = (*iter);
 
 		// prevent duplicate of filenames
 		// check if filename is been marked so do not add the resource again
-		if (!pRes->IsDuplicate() && !SV_FileInConsistencyList(pRes->GetFileName(), NULL))
+		if (!pRes->IsDuplicate())
 		{
 			// check limit resource
 			if (g_RehldsServerData->GetResourcesNum() >= MAX_RESOURCE_LIST)
@@ -30,21 +31,20 @@ int CResourceFile::CreateResourceList()
 			}
 
 			// not allow to add a resource if the index is larger than 1024 or we will get Bad file data.
-			// https://github.com/dreamstalker/rehlds/blob/master/rehlds/engine/sv_user.cpp#L362
+			// https://github.com/dreamstalker/rehlds/blob/beaeb6513893760b231b01a981cecd48f50baa81/rehlds/engine/sv_user.cpp#L374
 			if (nCustomConsistency + m_ConsistencyNum >= MAX_RANGE_CONSISTENCY)
 			{
 				UTIL_Printf(__FUNCTION__ ": can't add consistency \"%s\" on line %d; index out of bounds '%d'\n", pRes->GetFileName(), pRes->GetLine(), MAX_RANGE_CONSISTENCY);
 				break;
 			}
 
-			Log(__FUNCTION__ "  -> file: (%s), cmdexc: (%s), hash: (%x)", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetFileHash());
-			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, 4095);
+			Log(LOG_DETAILED, __FUNCTION__ "  -> file: (%s), cmdexec: (%s), hash: (%x), typeFind: (%s)", pRes->GetFileName(), pRes->GetCmdExec(), pRes->GetFileHash(), szTypeNames[ pRes->GetFileFlag() ]);
+			SV_AddResource(t_decal, pRes->GetFileName(), 0, RES_CHECKFILE, startIndex++);
 			++nCustomConsistency;
 		}
 	}
 
 	std::vector<resource_t> sortList;
-
 	for (int i = 0; i < g_RehldsServerData->GetResourcesNum(); ++i)
 	{
 		sortList.push_back(*g_RehldsServerData->GetResource(i));
@@ -56,17 +56,16 @@ int CResourceFile::CreateResourceList()
 	// sort
 	std::sort(sortList.begin(), sortList.end(), [](const resource_t &a, const resource_t &b)
 	{
-		if (!SV_FileInConsistencyList(b.szFileName, NULL))
-		{
-			// pre-sort the consistency files that which will have the flag RES_CHECKFILE.
-			if (SV_FileInConsistencyList(a.szFileName, NULL))
-				return true;
+		bool a_cons = (a.ucFlags & RES_CHECKFILE) || SV_FileInConsistencyList(a.szFileName, NULL);
+		bool b_cons = (b.ucFlags & RES_CHECKFILE) || SV_FileInConsistencyList(b.szFileName, NULL);
 
-			if ((a.ucFlags & RES_CHECKFILE) && !(b.ucFlags & RES_CHECKFILE))
-				return true;
-		}
+		if (a_cons && !b_cons)
+			return true;
 
-		return false;
+		if (b_cons && !a_cons)
+			return false;
+
+		return a.nIndex < b.nIndex;
 	});
 
 	for (auto iter = sortList.cbegin(), end = sortList.cend(); iter != end; ++iter)
@@ -100,11 +99,13 @@ void CResourceFile::Clear(IGameClient *pClient)
 	if (pClient != NULL)
 	{
 		auto iter = m_responseList.begin();
+		int nUserID = g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict());
+
 		while (iter != m_responseList.end())
 		{
 			CResponseBuffer *pFiles = (*iter);
 
-			if (pFiles->GetGameClient() != pClient)
+			if (pFiles->GetUserID() != nUserID)
 			{
 				iter++;
 				continue;
@@ -129,7 +130,7 @@ void CResourceFile::Clear(IGameClient *pClient)
 	ClearStringsCache();
 }
 
-void CResourceFile::Log(const char *fmt, ...)
+void CResourceFile::Log(flag_type_log type, const char *fmt, ...)
 {
 	static char string[2048];
 
@@ -139,8 +140,8 @@ void CResourceFile::Log(const char *fmt, ...)
 	char *file;
 	char dateLog[64];
 	bool bFirst = false;
-
-	if (pcv_rch_log->string[0] != '1')
+	
+	if ((int)pcv_rch_log->value < type)
 		return;
 
 	fp = fopen(m_LogFilePath, "r");
@@ -216,10 +217,7 @@ void CResourceFile::Init()
 	snprintf(m_PathDir, sizeof(m_PathDir), "%s" FILE_INI_RESOURCES, path);
 
 	g_engfuncs.pfnCvar_RegisterVariable(&cv_rch_log);
-	g_engfuncs.pfnCvar_RegisterVariable(&cv_rch_delay);
-
 	pcv_rch_log = g_engfuncs.pfnCVarGetPointer(cv_rch_log.name);
-	pcv_rch_delay = g_engfuncs.pfnCVarGetPointer(cv_rch_delay.name);
 }
 
 inline uint8 hexbyte(uint8 *hex)
@@ -404,10 +402,9 @@ void CResourceFile::LoadResources()
 				break;
 			}
 
-			argc++;
 			pToken = GetNextToken(&pos);
 
-			if (pToken == NULL && argc == ARG_TYPE_FLAG)
+			if (++argc == ARG_TYPE_FLAG && pToken == NULL)
 			{
 				// go to next argument
 				argc++;
@@ -461,7 +458,7 @@ const char *CResourceFile::GetNextToken(char **pbuf)
 		return NULL;
 
 	// skip spaces at the beginning
-	while (*rpos != 0 && isspace(*rpos))
+	while (*rpos != '\0' && isspace(*rpos))
 		rpos++;
 
 	if (*rpos == '\0')
@@ -506,7 +503,8 @@ const char *CResourceFile::GetNextToken(char **pbuf)
 			if (rpos != wpos)
 				*wpos = cc;
 
-			rpos++; wpos++;
+			rpos++;
+			wpos++;
 		}
 	}
 
@@ -550,7 +548,7 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 	std::vector<CResourceBuffer *> tempResourceList;
 
 	if (resource->type != t_decal
-		|| resource->nIndex != 4095)	// if by some miracle the decals will have the flag RES_CHECKFILE
+		|| resource->nIndex < 4095)	// if by some miracle the decals will have the flag RES_CHECKFILE
 						// to be sure not bypass the decals
 	{
 		AddFileResponse(pSenderClient, resource->szFileName, hash);
@@ -619,10 +617,10 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 			// push exec cmd
 			Exec.AddElement(pSenderClient, pRes, hash);
 
-			static const char *szTypeNames[] = { "none", "exists", "missing", "ignore", "hash_any" };
-			Log("  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%s), prevhash: (%x), (%s), prevfile: (%s), findathash: (%s), md5hex: (%x)",
-				pRes->GetFileName(), pRes->GetFileHash(), hash, szTypeNames[typeFind], m_PrevHash, pSenderClient->GetName(),
-				FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), _byteswap_ulong(hash));
+			flag_type_log type = (typeFind == FLAG_TYPE_IGNORE) ? LOG_DETAILED : LOG_NORMAL;
+			Log(type, "  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%s), prevhash: (%x), (#%u)(%s), prevfile: (%s), findathash: (%s), md5hex: (%x)",
+				pRes->GetFileName(), pRes->GetFileHash(), hash, szTypeNames[ typeFind ], m_PrevHash, g_engfuncs.pfnGetPlayerUserId(pSenderClient->GetEdict()),
+				pSenderClient->GetName(), FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), _byteswap_ulong(hash));
 		}
 
 		bHandled = true;
@@ -672,6 +670,7 @@ CResourceFile::CResponseBuffer::CResponseBuffer(IGameClient *pSenderClient, char
 	m_pClient = pSenderClient;
 	m_FileName = DuplicateString(filename);
 	m_ClientHash = hash;
+	m_UserID = g_engfuncs.pfnGetPlayerUserId(pSenderClient->GetEdict());
 }
 
 const char *CResourceFile::FindFilenameOfHash(uint32 hash)

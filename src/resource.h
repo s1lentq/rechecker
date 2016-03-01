@@ -4,6 +4,13 @@
 #define MAX_CMD_LENGTH		128
 #define MAX_RANGE_CONSISTENCY	1024
 
+enum flag_type_log
+{
+	LOG_NONE = 0,
+	LOG_NORMAL,
+	LOG_DETAILED
+};
+
 enum flag_type_resources
 {
 	FLAG_TYPE_NONE = 0,
@@ -60,7 +67,7 @@ public:
 	void Clear(IGameClient *pClient = NULL);
 	void LoadResources();
 	int CreateResourceList();
-	void Log(const char *fmt, ...);
+	void Log(flag_type_log type, const char *fmt, ...);
 
 	bool FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash);
 
@@ -71,11 +78,13 @@ private:
 	public:
 		CResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash);
 
+		int GetUserID() const { return m_UserID; };
 		IGameClient *GetGameClient() const { return m_pClient; };
 		const char *GetFileName() const { return m_FileName; };
 		uint32 GetClientHash() const { return m_ClientHash; };
 
 	private:
+		int m_UserID;
 		IGameClient *m_pClient;
 		const char *m_FileName;
 		uint32 m_ClientHash;
@@ -109,8 +118,6 @@ private:
 };
 
 extern CResourceFile Resource;
-
 extern cvar_t *pcv_rch_log;
-extern cvar_t *pcv_rch_delay;
 
 void ClearStringsCache();

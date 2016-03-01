@@ -35,7 +35,7 @@
 #include "model.h"
 
 #define REHLDS_API_VERSION_MAJOR 2
-#define REHLDS_API_VERSION_MINOR 5
+#define REHLDS_API_VERSION_MINOR 7
 
 //Steam_NotifyClientConnect hook
 typedef IHookChain<qboolean, IGameClient*, const void*, unsigned int> IRehldsHook_Steam_NotifyClientConnect;
@@ -78,8 +78,8 @@ typedef IHookChain<qboolean, IGameClient*> IRehldsHook_Steam_NotifyBotConnect;
 typedef IHookChainRegistry<qboolean, IGameClient*> IRehldsHookRegistry_Steam_NotifyBotConnect;
 
 //SerializeSteamId
-typedef IVoidHookChain<USERID_t*> IRehldsHook_SerializeSteamId;
-typedef IVoidHookChainRegistry<USERID_t*> IRehldsHookRegistry_SerializeSteamId;
+typedef IVoidHookChain<USERID_t*, USERID_t*> IRehldsHook_SerializeSteamId;
+typedef IVoidHookChainRegistry<USERID_t*, USERID_t*> IRehldsHookRegistry_SerializeSteamId;
 
 //SV_CompareUserID hook
 typedef IHookChain<qboolean, USERID_t*, USERID_t*> IRehldsHook_SV_CompareUserID;
@@ -165,6 +165,10 @@ typedef IHookChainRegistry<uint64> IRehldsHookRegistry_Steam_GSGetSteamID;
 typedef IHookChain<int> IRehldsHook_SV_TransferConsistencyInfo;
 typedef IHookChainRegistry<int> IRehldsHookRegistry_SV_TransferConsistencyInfo;
 
+//Steam_GSBUpdateUserData hook
+typedef IHookChain<bool, uint64, const char *, uint32> IRehldsHook_Steam_GSBUpdateUserData;
+typedef IHookChainRegistry<bool, uint64, const char *, uint32> IRehldsHookRegistry_Steam_GSBUpdateUserData;
+
 class IRehldsHookchains {
 public:
 	virtual ~IRehldsHookchains() { }
@@ -201,6 +205,7 @@ public:
 	virtual IRehldsHookRegistry_SV_WriteVoiceCodec* SV_WriteVoiceCodec() = 0;
 	virtual IRehldsHookRegistry_Steam_GSGetSteamID* Steam_GSGetSteamID() = 0;
 	virtual IRehldsHookRegistry_SV_TransferConsistencyInfo* SV_TransferConsistencyInfo() = 0;
+	virtual IRehldsHookRegistry_Steam_GSBUpdateUserData* Steam_GSBUpdateUserData() = 0;
 };
 
 struct RehldsFuncs_t {

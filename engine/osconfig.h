@@ -123,6 +123,11 @@
 		VirtualFree(ptr, 0, MEM_RELEASE);
 	}
 #else // _WIN32
+	#ifdef __FUNCTION__
+		#undef __FUNCTION__
+	#endif
+	#define __FUNCTION__ __func__
+
 	#ifndef PAGESIZE
 		#define PAGESIZE 4096
 	#endif
@@ -165,8 +170,6 @@
 	}
 
 	#define WSAENOPROTOOPT ENOPROTOOPT
-
-	inline unsigned long _byteswap_ulong(unsigned long val) { return _bswap(val); }
 
 	#ifndef FALSE
 	#define FALSE	0

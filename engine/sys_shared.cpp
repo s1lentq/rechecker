@@ -25,20 +25,46 @@
 *    version.
 *
 */
-#pragma once
+#include "sys_shared.h"
 
-/* <19039> ../common/quakedef.h:29 */
-typedef int BOOL; /* size: 4 */
+#if defined(__GNUC__)
+#include <cpuid.h>
+#endif
 
-// user message
-#define MAX_USER_MSG_DATA 192
+#define SSE3_FLAG		(1<<0)
+#define SSSE3_FLAG		(1<<9)
+#define SSE4_1_FLAG		(1<<19)
+#define SSE4_2_FLAG		(1<<20)
+#define AVX_FLAG		(1<<28)
+#define AVX2_FLAG		(1<<5)
 
-/* <627f> ../common/quakedef.h:137 */
-//moved to com_model.h
-//typedef struct cache_user_s
-//{
-//	void *data;
-//} cache_user_t;
+cpuinfo_t cpuinfo;
 
-/* <4313b> ../common/quakedef.h:162 */
-typedef int (*pfnUserMsgHook)(const char *, int, void *);
+void Sys_CheckCpuInstructionsSupport(void)
+{
+	unsigned int cpuid_data[4];
+
+#if defined ASMLIB_H
+	cpuid_ex((int *)cpuid_data, 1, 0);
+#elif defined(__GNUC__)
+	__get_cpuid(0x1, &cpuid_data[0], &cpuid_data[1], &cpuid_data[2], &cpuid_data[3]);
+#else
+	__cpuidex((int *)cpuid_data, 1, 0);
+#endif
+
+	cpuinfo.sse3 = (cpuid_data[2] & SSE3_FLAG) ? 1 : 0; // ecx
+	cpuinfo.ssse3 = (cpuid_data[2] & SSSE3_FLAG) ? 1 : 0;
+	cpuinfo.sse4_1 = (cpuid_data[2] & SSE4_1_FLAG) ? 1 : 0;
+	cpuinfo.sse4_2 = (cpuid_data[2] & SSE4_2_FLAG) ? 1 : 0;
+	cpuinfo.avx = (cpuid_data[2] & AVX_FLAG) ? 1 : 0;
+
+#if defined ASMLIB_H
+	cpuid_ex((int *)cpuid_data, 7, 0);
+#elif defined(__GNUC__)
+	__get_cpuid(0x7, &cpuid_data[0], &cpuid_data[1], &cpuid_data[2], &cpuid_data[3]);
+#else
+	__cpuidex((int *)cpuid_data, 7, 0);
+#endif
+
+	cpuinfo.avx2 = (cpuid_data[1] & AVX2_FLAG) ? 1 : 0; // ebx
+}

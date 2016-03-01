@@ -14,11 +14,13 @@ private:
 		CBufExec(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash);
 		~CBufExec();
 
+		int GetUserID() const { return m_UserID; };
 		IGameClient *GetGameClient() const { return m_pClient; };
 		CResourceBuffer *GetResource() const { return m_pResource; };
 		uint32 GetClientHash() const { return m_ClientHash; };
 
 	private:
+		int m_UserID;
 		IGameClient *m_pClient;
 		CResourceBuffer *m_pResource;
 		uint32 m_ClientHash;
