@@ -5,8 +5,10 @@
 #else
 	#define _stricmp strcasecmp
 	#define _mkdir mkdir
-	// Deail with stupid macro in kernel.h
-	#undef __FUNCTION__
+	#ifdef __FUNCTION__
+		#undef __FUNCTION__
+	#endif
+	#define __FUNCTION__ __func__
 #endif // _WIN32
 
 #define MAX_PATH_LENGTH		260

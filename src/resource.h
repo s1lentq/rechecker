@@ -4,6 +4,9 @@
 #define MAX_CMD_LENGTH		128
 #define MAX_RANGE_CONSISTENCY	1024
 
+#define RESOURCE_INDEX_BITS	12
+#define RESOURCE_MAX_COUNT	(1 << RESOURCE_INDEX_BITS)
+
 enum flag_type_log
 {
 	LOG_NONE = 0,
