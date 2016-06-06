@@ -2,6 +2,7 @@
 
 #ifdef _WIN32 // WINDOWS
 	#pragma warning(disable : 4005)
+	#define EXT_FUNC /**/
 #else
 	#define _stricmp strcasecmp
 	#define _mkdir mkdir
@@ -9,6 +10,7 @@
 		#undef __FUNCTION__
 	#endif
 	#define __FUNCTION__ __func__
+	#define EXT_FUNC __attribute__((force_align_arg_pointer))
 #endif // _WIN32
 
 #define MAX_PATH_LENGTH		260
@@ -28,6 +30,10 @@
 #include "rehlds_api.h"
 #include "engine_rehlds.h"
 #include "consistency.h"
+
+#include "hookchains_impl.h"
+#include "rechecker_api.h"
+#include "rechecker_api_impl.h"
 
 #include "main.h"
 #include "task.h"
@@ -49,4 +55,4 @@
 extern void UTIL_Printf(const char *fmt, ...);
 extern void UTIL_LogPrintf(const char *fmt, ...);
 extern char *UTIL_VarArgs(const char *format, ...);
-
+extern void __declspec(noreturn) Sys_Error(const char* fmt, ...);

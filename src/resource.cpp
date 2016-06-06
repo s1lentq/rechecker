@@ -1,12 +1,27 @@
 #include "precompiled.h"
 
-CResourceFile Resource;
+CResourceFile *g_pResource = nullptr;
 std::vector<const char *> StringsCache;
 
 cvar_t cv_rch_log = { "rch_log", "0", 0, 0.0f, NULL };
 cvar_t *pcv_rch_log = NULL;
 
 const char *szTypeNames[] = { "none", "exists", "missing", "ignore", "hash_any" };
+
+CResourceFile::CResourceFile() :
+	m_resourceList(),
+	m_responseList(),
+	m_ConsistencyNum(0),
+	m_PrevHash(0)
+{
+	m_PathDir[0] = '\0';
+	m_LogFilePath[0] = '\0';
+}
+
+CResourceFile::~CResourceFile()
+{
+	Clear();
+}
 
 int CResourceFile::CreateResourceList()
 {
@@ -15,7 +30,7 @@ int CResourceFile::CreateResourceList()
 
 	ComputeConsistencyFiles();
 
-	for (auto& res : m_resourceList)
+	for (auto res : m_resourceList)
 	{
 		// prevent duplicate of filenames
 		// check if filename is been marked so do not add the resource again
@@ -66,7 +81,7 @@ int CResourceFile::CreateResourceList()
 		return a.nIndex < b.nIndex;
 	});
 
-	for (auto& res : sortList)
+	for (auto res : sortList)
 	{
 		// Add new resource in the own order
 		SV_AddResource(res.type, res.szFileName, res.nDownloadSize, res.ucFlags, res.nIndex);
@@ -519,7 +534,7 @@ void CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resource
 	auto nRes = new CResourceBuffer(filename, cmdExec, flag, hash, line, bBreak);
 
 	// to mark files which are not required to add to the resource again
-	for (auto& res : m_resourceList)
+	for (auto res : m_resourceList)
 	{
 		if (_stricmp(res->GetFileName(), filename) == 0)
 		{
@@ -535,6 +550,10 @@ void CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resource
 void CResourceFile::AddFileResponse(IGameClient *pSenderClient, char *filename, uint32 hash)
 {
 	m_responseList.push_back(new CResponseBuffer(pSenderClient, filename, hash));
+}
+
+bool EXT_FUNC FileConsistencyProcess_hook(IGameClient *pSenderClient, IResourceBuffer *res, flag_type_resources typeFind, uint32 hash) {
+	return true;
 }
 
 bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash)
@@ -559,7 +578,7 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 		return true;
 	}
 
-	for (auto& res : m_resourceList)
+	for (auto res : m_resourceList)
 	{
 		if (strcmp(resource->szFileName, res->GetFileName()) != 0)
 			continue;
@@ -581,7 +600,7 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 			}
 			break;
 		case FLAG_TYPE_HASH_ANY:
-			for (auto& temp : tempResourceList)
+			for (auto temp : tempResourceList)
 			{
 				if (_stricmp(temp->GetFileName(), res->GetFileName()) != 0)
 					continue;
@@ -604,15 +623,19 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 			break;
 		}
 
-		if (typeFind != FLAG_TYPE_NONE)
+		if (g_RecheckerHookchains.m_FileConsistencyProcess.callChain(FileConsistencyProcess_hook, pSenderClient, res, typeFind, hash))
 		{
-			// push exec cmd
-			Exec.AddElement(pSenderClient, res, hash);
+			//FileConsistencyProcess
+			if (typeFind != FLAG_TYPE_NONE)
+			{
+				// push exec cmd
+				Exec.AddElement(pSenderClient, res, hash);
 
-			flag_type_log type = (typeFind == FLAG_TYPE_IGNORE) ? LOG_DETAILED : LOG_NORMAL;
-			Log(type, "  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%s), prevhash: (%x), (#%u)(%s), prevfile: (%s), findathash: (%s), md5hex: (%x)",
-				res->GetFileName(), res->GetFileHash(), hash, szTypeNames[ typeFind ], m_PrevHash, g_engfuncs.pfnGetPlayerUserId(pSenderClient->GetEdict()),
-				pSenderClient->GetName(), FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), _byteswap_ulong(hash));
+				flag_type_log type = (typeFind == FLAG_TYPE_IGNORE) ? LOG_DETAILED : LOG_NORMAL;
+				Log(type, "  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%s), prevhash: (%x), (#%u)(%s), prevfile: (%s), findathash: (%s), md5hex: (%x)",
+					res->GetFileName(), res->GetFileHash(), hash, szTypeNames[ typeFind ], m_PrevHash, g_engfuncs.pfnGetPlayerUserId(pSenderClient->GetEdict()),
+					pSenderClient->GetName(), FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), _byteswap_ulong(hash));
+			}
 		}
 
 		bHandled = true;
@@ -625,7 +648,7 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 
 const char *DuplicateString(const char *str)
 {
-	for (auto& string : StringsCache)
+	for (auto string : StringsCache)
 	{
 		if (!strcmp(string, str))
 			return string;
@@ -638,7 +661,7 @@ const char *DuplicateString(const char *str)
 
 void ClearStringsCache()
 {
-	for (auto& string : StringsCache)
+	for (auto string : StringsCache)
 		delete [] string;
 
 	StringsCache.clear();
@@ -667,7 +690,7 @@ CResourceFile::CResponseBuffer::CResponseBuffer(IGameClient *pSenderClient, char
 
 const char *CResourceFile::FindFilenameOfHash(uint32 hash)
 {
-	for (auto& res : m_responseList)
+	for (auto res : m_responseList)
 	{
 		if (res->GetClientHash() == hash)
 			return res->GetFileName();

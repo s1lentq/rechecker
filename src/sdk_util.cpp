@@ -37,3 +37,23 @@ char *UTIL_VarArgs(const char *format, ...)
 
 	return string;
 }
+
+void __declspec(noreturn) Sys_Error(const char* fmt, ...)
+{
+	va_list argptr;
+	static char string[8192];
+
+	va_start(argptr, fmt);
+	vsnprintf(string, sizeof(string), fmt, argptr);
+	va_end(argptr);
+
+	printf("%s\n", string);
+
+	FILE *fl = fopen("rehlds_error.txt", "w");
+	fprintf(fl, "%s\n", string);
+	fclose(fl);
+
+	//TerminateProcess(GetCurrentProcess(), 1);
+	*((int*)NULL) = 0;
+	while (true);
+}

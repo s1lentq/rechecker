@@ -462,6 +462,14 @@
     <ClInclude Include="..\src\engine_rehlds.h" />
     <ClInclude Include="..\src\cmdexec.h" />
     <ClInclude Include="..\src\resource.h" />
+    <ClInclude Include="..\src\hookchains_impl.h" />
+    <ClInclude Include="..\src\rechecker_api_impl.h" />
+    <ClInclude Include="..\public\rechecker_api.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\rechecker_interfaces.h">
+      <Filter>public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\parsemsg.cpp">
@@ -480,6 +488,8 @@
     <ClCompile Include="..\src\sdk_util.cpp" />
     <ClCompile Include="..\src\cmdexec.cpp" />
     <ClCompile Include="..\src\resource.cpp" />
+    <ClCompile Include="..\src\hookchains_impl.cpp" />
+    <ClCompile Include="..\src\rechecker_api_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sdk">
@@ -505,6 +515,9 @@
     </Filter>
     <Filter Include="dist">
       <UniqueIdentifier>{d8dea905-0ad8-4f5e-973c-fc9917c49e68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public">
+      <UniqueIdentifier>{ec8144a1-347d-47dc-9f5f-ffe4670ac29d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

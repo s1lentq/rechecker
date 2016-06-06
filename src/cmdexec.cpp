@@ -68,7 +68,7 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 
 	if (string[0] != '\0')
 	{
-		Resource.Log(LOG_NORMAL, "  -> ExecuteCMD: (%s), for (#%u)(%s)", string, nUserID, pClient->GetName());
+		g_pResource->Log(LOG_NORMAL, "  -> ExecuteCMD: (%s), for (#%u)(%s)", string, nUserID, pClient->GetName());
 	}
 
 	len = strlen(string);
@@ -79,6 +79,11 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 		string[len - 1] = '\n';
 
 	return string;
+}
+
+void EXT_FUNC CmdExec_hook(IGameClient *pClient, IResourceBuffer *pRes, char *cmdExec, uint32 responseHash) {
+	// execute cmdexec
+	SERVER_COMMAND(cmdExec);
 }
 
 void CExecMngr::CommandExecute(IGameClient *pClient)
@@ -113,8 +118,7 @@ void CExecMngr::CommandExecute(IGameClient *pClient)
 
 			if (cmdExec != NULL && cmdExec[0] != '\0')
 			{
-				// execute cmdexec
-				SERVER_COMMAND(cmdExec);
+				g_RecheckerHookchains.m_CmdExec.callChain(CmdExec_hook, pClient, pRes, cmdExec, _byteswap_ulong(pExec->GetClientHash()));
 			}
 
 			bBreak = pRes->IsBreak();

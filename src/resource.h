@@ -14,15 +14,6 @@ enum flag_type_log
 	LOG_DETAILED
 };
 
-enum flag_type_resources
-{
-	FLAG_TYPE_NONE = 0,
-	FLAG_TYPE_EXISTS,		// to comparison with the specified hash value
-	FLAG_TYPE_MISSING,		// check it missing file on client
-	FLAG_TYPE_IGNORE,		// ignore the specified hash value
-	FLAG_TYPE_HASH_ANY,		// any file with any the hash value
-};
-
 enum arg_type_e
 {
 	ARG_TYPE_FILE_NAME = 0,
@@ -34,7 +25,7 @@ enum arg_type_e
 };
 
 // buffer for checker list
-class CResourceBuffer
+class CResourceBuffer: public IResourceBuffer
 {
 public:
 	CResourceBuffer(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak);
@@ -63,9 +54,12 @@ private:
 	bool m_Break;		// do not check a next files
 };
 
-class CResourceFile
+class CResourceFile: public IResourceFile
 {
 public:
+	CResourceFile();
+	~CResourceFile();
+
 	void Init();
 	void Clear(IGameClient *pClient = NULL);
 	void LoadResources();
@@ -73,7 +67,6 @@ public:
 	void Log(flag_type_log type, const char *fmt, ...);
 
 	bool FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash);
-
 private:
 	// buffer for response list
 	class CResponseBuffer
@@ -95,9 +88,7 @@ private:
 
 private:
 	// for temporary files of responses
-	void AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak);
 	void AddFileResponse(IGameClient *pSenderClient, char *filename, uint32 hash);
-	const char *FindFilenameOfHash(uint32 hash);
 	void LogPrepare();
 
 	// compute the total number of consistency files.
@@ -118,9 +109,16 @@ private:
 
 	char m_PathDir[MAX_PATH_LENGTH];
 	char m_LogFilePath[MAX_PATH_LENGTH];	// log data
+
+public:
+	const char *FindFilenameOfHash(uint32 hash);
+	int GetConsistencyNum() const { return m_ConsistencyNum; }
+	uint32 GetPrevHash() const { return m_PrevHash; }
+	void AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak);
+	const ResourceList *GetResourceList() const { return &m_resourceList; }
 };
 
-extern CResourceFile Resource;
+extern CResourceFile *g_pResource;
 extern cvar_t *pcv_rch_log;
 
 void ClearStringsCache();
