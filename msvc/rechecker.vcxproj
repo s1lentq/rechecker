@@ -178,7 +178,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\public\interface.cpp" />
+    <ClCompile Include="..\public\interface.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\src\cmdexec.cpp" />
     <ClCompile Include="..\src\hookchains_impl.cpp" />
     <ClCompile Include="..\src\rechecker_api_impl.cpp" />

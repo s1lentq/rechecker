@@ -1,6 +1,5 @@
 #include "precompiled.h"
 
-
 #if !defined ( _WIN32 )
 // Linux doesn't have this function so this emulates its functionality
 //

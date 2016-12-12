@@ -1,16 +1,8 @@
 #pragma once
 
-#ifdef _WIN32 // WINDOWS
-	#pragma warning(disable : 4005)
-	#define EXT_FUNC /**/
-#else
+#ifndef _WIN32
 	#define _stricmp strcasecmp
 	#define _mkdir mkdir
-	#ifdef __FUNCTION__
-		#undef __FUNCTION__
-	#endif
-	#define __FUNCTION__ __func__
-	#define EXT_FUNC __attribute__((force_align_arg_pointer))
 #endif // _WIN32
 
 #define MAX_PATH_LENGTH		260
@@ -46,13 +38,16 @@
 #ifdef _WIN32
 #define DLLEXPORT __declspec(dllexport)
 #define NOINLINE __declspec(noinline)
+#define NORETURN __declspec(noreturn)
 #else
 #define DLLEXPORT __attribute__((visibility("default")))
 #define NOINLINE __attribute__((noinline))
+#define NORETURN __attribute__((noreturn))
 #define WINAPI		/* */
 #endif // _WIN32
+
 
 extern void UTIL_Printf(const char *fmt, ...);
 extern void UTIL_LogPrintf(const char *fmt, ...);
 extern char *UTIL_VarArgs(const char *format, ...);
-extern void __declspec(noreturn) Sys_Error(const char* fmt, ...);
+extern void NORETURN Sys_Error(const char *error, ...);

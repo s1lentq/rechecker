@@ -4,7 +4,7 @@ plugin_info_t Plugin_info =
 {
 	META_INTERFACE_VERSION,
 	"Rechecker",
-	"2.1",
+	"2.2",
 	__DATE__,
 	"s1lent",
 	"http://www.dedicated-server.ru/",
@@ -17,9 +17,7 @@ meta_globals_t *gpMetaGlobals;
 gamedll_funcs_t *gpGamedllFuncs;
 mutil_funcs_t *gpMetaUtilFuncs;
 
-DLL_FUNCTIONS gpFunctionTable;
-DLL_FUNCTIONS gpFunctionTable_Post;
-
+DLL_FUNCTIONS *gMetaEntityInterface;
 META_FUNCTIONS gMetaFunctionTable;
 
 extern bool OnMetaAttach();
@@ -42,12 +40,13 @@ C_DLLEXPORT int Meta_Attach(PLUG_LOADTIME now, META_FUNCTIONS *pFunctionTable, m
 	{
 		return FALSE;
 	}
-	
+
 	gMetaFunctionTable.pfnGetEntityAPI2 = GetEntityAPI2;
 	gMetaFunctionTable.pfnGetEntityAPI2_Post = GetEntityAPI2_Post;
 
-	memcpy(pFunctionTable, &gMetaFunctionTable, sizeof(META_FUNCTIONS));
+	GET_HOOK_TABLES(PLID, NULL, &gMetaEntityInterface, NULL);
 
+	memcpy(pFunctionTable, &gMetaFunctionTable, sizeof(META_FUNCTIONS));
 	return TRUE;
 }
 

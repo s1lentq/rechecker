@@ -28,8 +28,8 @@
 #pragma once
 
 // FileConsistencyProcess hook
-typedef IHookChainImpl<bool, IGameClient *, IResourceBuffer *, flag_type_resources , uint32> CRecheckerHook_FileConsistencyProcess;
-typedef IHookChainRegistryImpl<bool, IGameClient *, IResourceBuffer *, flag_type_resources , uint32> CRecheckerHookRegistry_FileConsistencyProcess;
+typedef IVoidHookChainImpl<IGameClient *, IResourceBuffer *, flag_type_resources, uint32> CRecheckerHook_FileConsistencyProcess;
+typedef IVoidHookChainRegistryImpl<IGameClient *, IResourceBuffer *, flag_type_resources, uint32> CRecheckerHookRegistry_FileConsistencyProcess;
 
 // CmdExec hook
 typedef IVoidHookChainImpl<IGameClient *, IResourceBuffer *, char *, uint32> CRecheckerHook_CmdExec;
@@ -58,6 +58,6 @@ public:
 };
 
 void Rechecker_Api_Init();
-void AddElement_api(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, bool bBreak);
+IResourceBuffer *AddElement_api(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, bool bBreak);
 IResourceBuffer *FindElement_api(char *filename);
 IResourceFile *GetResourceFile_api();

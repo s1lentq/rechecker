@@ -22,13 +22,13 @@ void CExecMngr::AddElement(IGameClient *pClient, CResourceBuffer *pResource, uin
 
 void StringReplace(char *src, const char *strold, const char *strnew)
 {
-	if (strnew == NULL)
+	if (!strnew)
 		return;
 
 	char *p = src;
 	int oldLen = strlen(strold), newLen = strlen(strnew);
 
-	while ((p = strstr(p, strold)) != NULL)
+	while ((p = strstr(p, strold)) != nullptr)
 	{
 		if (oldLen != newLen)
 			memmove(p + newLen, p + oldLen, strlen(p) - oldLen + 1);
@@ -46,8 +46,8 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	static char string[256];
 
 	// check cmdexec is empty
-	if (pResource->GetCmdExec() == NULL)
-		return NULL;
+	if (!pResource->GetCmdExec())
+		return nullptr;
 
 	strncpy(string, pResource->GetCmdExec(), sizeof(string) - 1);
 	string[sizeof(string) - 1] = '\0';
@@ -115,8 +115,7 @@ void CExecMngr::CommandExecute(IGameClient *pClient)
 		if (!bBreak)
 		{
 			char *cmdExec = GetExecCmdPrepare(pClient, pRes, pExec->GetClientHash());
-
-			if (cmdExec != NULL && cmdExec[0] != '\0')
+			if (cmdExec && cmdExec[0] != '\0')
 			{
 				g_RecheckerHookchains.m_CmdExec.callChain(CmdExec_hook, pClient, pRes, cmdExec, _byteswap_ulong(pExec->GetClientHash()));
 			}
@@ -132,7 +131,7 @@ void CExecMngr::CommandExecute(IGameClient *pClient)
 
 void CExecMngr::Clear(IGameClient *pClient)
 {
-	if (pClient == NULL)
+	if (!pClient)
 	{
 		m_execList.clear();
 		return;

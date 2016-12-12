@@ -45,8 +45,8 @@ enum flag_type_resources
 class IResourceBuffer;
 
 // FileConsistencyProcess hook
-typedef IHookChain<bool, IGameClient *, IResourceBuffer *, flag_type_resources , uint32> IRecheckerHook_FileConsistencyProcess;
-typedef IHookChainRegistry<bool, IGameClient *, IResourceBuffer *, flag_type_resources , uint32> IRecheckerHookRegistry_FileConsistencyProcess;
+typedef IVoidHookChain<IGameClient *, IResourceBuffer *, flag_type_resources, uint32> IRecheckerHook_FileConsistencyProcess;
+typedef IVoidHookChainRegistry<IGameClient *, IResourceBuffer *, flag_type_resources, uint32> IRecheckerHookRegistry_FileConsistencyProcess;
 
 // CmdExec hook
 typedef IVoidHookChain<IGameClient *, IResourceBuffer *, char *, uint32> IRecheckerHook_CmdExec;
@@ -54,10 +54,10 @@ typedef IVoidHookChainRegistry<IGameClient *, IResourceBuffer *, char *, uint32>
 
 class IRecheckerHookchains {
 public:
-	virtual ~IRecheckerHookchains() { }
+	virtual ~IRecheckerHookchains() {}
 
-	virtual IRecheckerHookRegistry_FileConsistencyProcess* FileConsistencyProcess() = 0;
-	virtual IRecheckerHookRegistry_CmdExec* CmdExec() = 0;
+	virtual IRecheckerHookRegistry_FileConsistencyProcess *FileConsistencyProcess() = 0;
+	virtual IRecheckerHookRegistry_CmdExec *CmdExec() = 0;
 };
 
 class IResourceBuffer {
@@ -71,9 +71,9 @@ public:
 	virtual const char *GetCmdExec() const = 0;
 	virtual int GetLine() const = 0;
 
-	virtual bool IsBreak() const = 0;
-	virtual bool IsDuplicate() const = 0;
-	virtual void SetDuplicate() = 0;
+	virtual bool IsBreak() const = 0;			// is have do not check a next files
+	virtual bool IsDuplicate() const = 0;			// it is already have in resourcelist
+	virtual bool IsAddEx() const = 0;			// if it added via API
 };
 
 class IResourceFile {
@@ -86,7 +86,7 @@ public:
 };
 
 struct RecheckerFuncs_t {
-	void(*AddElement)(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, bool bBreak);
+	IResourceBuffer *(*AddElement)(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, bool bBreak);
 	IResourceBuffer*(*FindElement)(char *filename);
 	IResourceFile*(*GetResourceFile)();
 };

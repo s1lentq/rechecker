@@ -1,10 +1,10 @@
 #include "precompiled.h"
 
 CResourceFile *g_pResource = nullptr;
-std::vector<const char *> StringsCache;
+CResourceFile::StringList CResourceFile::m_StringsCache;
 
-cvar_t cv_rch_log = { "rch_log", "0", 0, 0.0f, NULL };
-cvar_t *pcv_rch_log = NULL;
+cvar_t cv_rch_log = { "rch_log", "0", 0, 0.0f, nullptr };
+cvar_t *pcv_rch_log = nullptr;
 
 const char *szTypeNames[] = { "none", "exists", "missing", "ignore", "hash_any" };
 
@@ -25,7 +25,9 @@ CResourceFile::~CResourceFile()
 
 int CResourceFile::CreateResourceList()
 {
-	int startIndex = 4095;
+	// max value of 12 bits
+	// we need to go over the threshold
+	int startIndex = (1 << RESOURCE_INDEX_BITS) - 1;
 	int nCustomConsistency = 0;
 
 	ComputeConsistencyFiles();
@@ -44,7 +46,7 @@ int CResourceFile::CreateResourceList()
 			}
 
 			// not allow to add a resource if the index is larger than 1024 or we will get Bad file data.
-			// https://github.com/dreamstalker/rehlds/blob/beaeb6513893760b231b01a981cecd48f50baa81/rehlds/engine/sv_user.cpp#L374
+			// https://github.com/dreamstalker/rehlds/blob/beaeb65/rehlds/engine/sv_user.cpp#L374
 			if (nCustomConsistency + m_ConsistencyNum >= MAX_RANGE_CONSISTENCY)
 			{
 				UTIL_Printf(__FUNCTION__ ": can't add consistency \"%s\" on line %d; index out of bounds '%d'\n", res->GetFileName(), res->GetLine(), MAX_RANGE_CONSISTENCY);
@@ -69,8 +71,8 @@ int CResourceFile::CreateResourceList()
 	// sort
 	std::sort(sortList.begin(), sortList.end(), [](const resource_t &a, const resource_t &b)
 	{
-		bool a_cons = (a.ucFlags & RES_CHECKFILE) || SV_FileInConsistencyList(a.szFileName, NULL);
-		bool b_cons = (b.ucFlags & RES_CHECKFILE) || SV_FileInConsistencyList(b.szFileName, NULL);
+		bool a_cons = (a.ucFlags & RES_CHECKFILE) || SV_FileInConsistencyList(a.szFileName, nullptr);
+		bool b_cons = (b.ucFlags & RES_CHECKFILE) || SV_FileInConsistencyList(b.szFileName, nullptr);
 
 		if (a_cons && !b_cons)
 			return true;
@@ -97,42 +99,36 @@ void CResourceFile::ComputeConsistencyFiles()
 
 	for (int i = 0; i < g_RehldsServerData->GetResourcesNum(); ++i)
 	{
-		resource_t *r = g_RehldsServerData->GetResource(i);
-
-		if (r->ucFlags == (RES_CUSTOM | RES_REQUESTED | RES_UNK_6) || (r->ucFlags & RES_CHECKFILE))
+		auto res = g_RehldsServerData->GetResource(i);
+		if (res->ucFlags == (RES_CUSTOM | RES_REQUESTED | RES_UNK_6) || (res->ucFlags & RES_CHECKFILE))
 			continue;
 
-		if (SV_FileInConsistencyList(r->szFileName, NULL))
+		if (SV_FileInConsistencyList(res->szFileName, nullptr))
 			++m_ConsistencyNum;
 	}
 }
 
 void CResourceFile::Clear(IGameClient *pClient)
 {
-	if (pClient != NULL)
+	if (pClient)
 	{
-		auto iter = m_responseList.begin();
-		int nUserID = g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict());
-
-		while (iter != m_responseList.end())
-		{
-			CResponseBuffer *pFiles = (*iter);
-
-			if (pFiles->GetUserID() != nUserID)
-			{
-				iter++;
-				continue;
-			}
-
-			// erase cmdexec
-			delete pFiles;
-			iter = m_responseList.erase(iter);
-		}
+		// remove each entries by pClient
+		auto nUserID = g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict());
+		m_responseList.erase(
+			std::remove_if(
+				m_responseList.begin(),
+				m_responseList.end(),
+				[nUserID](const CResponseBuffer *pFiles) -> bool {
+					return (pFiles->GetUserID() == nUserID);
+				}
+			), m_responseList.end()
+		);
 
 		m_PrevHash = 0;
 		return;
 	}
 
+	// remove all
 	m_PrevHash = 0;
 	m_ConsistencyNum = 0;
 
@@ -159,15 +155,14 @@ void CResourceFile::Log(flag_type_log type, const char *fmt, ...)
 
 	fp = fopen(m_LogFilePath, "r");
 
-	if (fp != NULL)
+	if (fp)
 	{
 		bFirst = true;
 		fclose(fp);
 	}
 
 	fp = fopen(m_LogFilePath, "a");
-
-	if (fp == NULL)
+	if (!fp)
 	{
 		return;
 	}
@@ -179,7 +174,7 @@ void CResourceFile::Log(flag_type_log type, const char *fmt, ...)
 
 	strcat(string, "\n");
 
-	td = time(NULL);
+	td = time(nullptr);
 	lt = localtime(&td);
 
 	strftime(dateLog, sizeof(dateLog), "%m/%d/%Y - %H:%M:%S", lt);
@@ -187,7 +182,7 @@ void CResourceFile::Log(flag_type_log type, const char *fmt, ...)
 	if (!bFirst)
 	{
 		file = strrchr(m_LogFilePath, '/');
-		if (file == NULL)
+		if (file == nullptr)
 			file = "<null>";
 
 		fprintf(fp, "L %s: Log file started (file \"%s\") (version \"%s\")\n", dateLog, file, Plugin_info.version);
@@ -251,8 +246,7 @@ inline bool invalidchar(const char c)
 bool IsValidFilename(char *psrc, char &pchar)
 {
 	char *pch = strrchr(psrc, '/');
-
-	if (pch == NULL)
+	if (!pch)
 		pch = psrc;
 
 	while (*pch++)
@@ -271,15 +265,14 @@ bool IsFileHasExtension(char *psrc)
 {
 	// find the extension filename
 	char *pch = strrchr(psrc, '.');
-
-	if (pch == NULL)
+	if (!pch)
 		return false;
 
 	// the size extension
 	if (strlen(&pch[1]) <= 0)
 		return false;
 
-	return strchr(pch, '/') == NULL;
+	return strchr(pch, '/') == nullptr;
 }
 
 void CResourceFile::LogPrepare()
@@ -289,11 +282,11 @@ void CResourceFile::LogPrepare()
 	time_t td;
 	tm *lt;
 
-	td = time(NULL);
+	td = time(nullptr);
 	lt = localtime(&td);
 
 	// remove path to log file
-	if ((pos = strrchr(m_LogFilePath, '/')) != NULL)
+	if ((pos = strrchr(m_LogFilePath, '/')) != nullptr)
 	{
 		*(pos + 1) = '\0';
 	}
@@ -318,7 +311,7 @@ void CResourceFile::LoadResources()
 
 	fp = fopen(m_PathDir, "r");
 
-	if (fp == NULL)
+	if (!fp)
 	{
 		UTIL_Printf(__FUNCTION__ ": can't find path to " FILE_INI_RESOURCES "\n");
 		return;
@@ -341,7 +334,7 @@ void CResourceFile::LoadResources()
 
 		memset(hash, 0, sizeof(hash));
 
-		while (pToken != NULL && argc <= MAX_PARSE_ARGUMENT)
+		while (pToken && argc <= MAX_PARSE_ARGUMENT)
 		{
 			len = strlen(pToken);
 
@@ -417,7 +410,7 @@ void CResourceFile::LoadResources()
 
 			pToken = GetNextToken(&pos);
 
-			if (++argc == ARG_TYPE_FLAG && pToken == NULL)
+			if (++argc == ARG_TYPE_FLAG && pToken == nullptr)
 			{
 				// go to next argument
 				argc++;
@@ -454,7 +447,7 @@ void CResourceFile::LoadResources()
 
 			AddElement(filename, cmdBufExec, flag, *(uint32 *)&hash[0], cline, bBreak);
 		}
-		else if (pToken != NULL || argc > ARG_TYPE_FILE_NAME)
+		else if (pToken || argc > ARG_TYPE_FILE_NAME)
 		{
 			LOG_PRINT_FAILED("parsing not enough arguments on line %d (got '%d', expected '%d')\n", cline, argc, MAX_PARSE_ARGUMENT);
 		}
@@ -468,7 +461,7 @@ const char *CResourceFile::GetNextToken(char **pbuf)
 {
 	char *rpos = *pbuf;
 	if (*rpos == '\0')
-		return NULL;
+		return nullptr;
 
 	// skip spaces at the beginning
 	while (*rpos != '\0' && isspace(*rpos))
@@ -477,7 +470,7 @@ const char *CResourceFile::GetNextToken(char **pbuf)
 	if (*rpos == '\0')
 	{
 		*pbuf = rpos;
-		return NULL;
+		return nullptr;
 	}
 
 	const char *res = rpos;
@@ -529,7 +522,7 @@ const char *CResourceFile::GetNextToken(char **pbuf)
 	return res;
 }
 
-void CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak)
+CResourceBuffer *CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak)
 {
 	auto nRes = new CResourceBuffer(filename, cmdExec, flag, hash, line, bBreak);
 
@@ -545,6 +538,7 @@ void CResourceFile::AddElement(char *filename, char *cmdExec, flag_type_resource
 	}
 
 	m_resourceList.push_back(nRes);
+	return nRes;
 }
 
 void CResourceFile::AddFileResponse(IGameClient *pSenderClient, char *filename, uint32 hash)
@@ -552,8 +546,24 @@ void CResourceFile::AddFileResponse(IGameClient *pSenderClient, char *filename, 
 	m_responseList.push_back(new CResponseBuffer(pSenderClient, filename, hash));
 }
 
-bool EXT_FUNC FileConsistencyProcess_hook(IGameClient *pSenderClient, IResourceBuffer *res, flag_type_resources typeFind, uint32 hash) {
-	return true;
+void EXT_FUNC FileConsistencyProcess_hook(IGameClient *pSenderClient, IResourceBuffer *res, flag_type_resources typeFind, uint32 hash)
+{
+	if (typeFind == FLAG_TYPE_NONE)
+		return;
+
+	auto nRes = static_cast<CResourceBuffer *>(res);
+
+	// push exec cmd
+	Exec.AddElement(pSenderClient, nRes, hash);
+	g_pResource->PrintLog(pSenderClient, nRes, typeFind, hash);
+}
+
+void CResourceFile::PrintLog(IGameClient *pSenderClient, CResourceBuffer *res, flag_type_resources typeFind, uint32 hash)
+{
+	flag_type_log type = (typeFind == FLAG_TYPE_IGNORE) ? LOG_DETAILED : LOG_NORMAL;
+	Log(type, "  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%s), prevhash: (%x), (#%u)(%s), prevfile: (%s), findathash: (%s), md5hex: (%x)",
+		res->GetFileName(), res->GetFileHash(), hash, szTypeNames[ typeFind ], m_PrevHash, g_engfuncs.pfnGetPlayerUserId(pSenderClient->GetEdict()),
+		pSenderClient->GetName(), FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), _byteswap_ulong(hash));
 }
 
 bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash)
@@ -623,21 +633,7 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 			break;
 		}
 
-		if (g_RecheckerHookchains.m_FileConsistencyProcess.callChain(FileConsistencyProcess_hook, pSenderClient, res, typeFind, hash))
-		{
-			//FileConsistencyProcess
-			if (typeFind != FLAG_TYPE_NONE)
-			{
-				// push exec cmd
-				Exec.AddElement(pSenderClient, res, hash);
-
-				flag_type_log type = (typeFind == FLAG_TYPE_IGNORE) ? LOG_DETAILED : LOG_NORMAL;
-				Log(type, "  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%s), prevhash: (%x), (#%u)(%s), prevfile: (%s), findathash: (%s), md5hex: (%x)",
-					res->GetFileName(), res->GetFileHash(), hash, szTypeNames[ typeFind ], m_PrevHash, g_engfuncs.pfnGetPlayerUserId(pSenderClient->GetEdict()),
-					pSenderClient->GetName(), FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), _byteswap_ulong(hash));
-			}
-		}
-
+		g_RecheckerHookchains.m_FileConsistencyProcess.callChain(FileConsistencyProcess_hook, pSenderClient, res, typeFind, hash);
 		bHandled = true;
 	}
 
@@ -646,31 +642,31 @@ bool CResourceFile::FileConsistencyResponse(IGameClient *pSenderClient, resource
 	return !bHandled;
 }
 
-const char *DuplicateString(const char *str)
+const char *CResourceFile::DuplicateString(const char *str)
 {
-	for (auto string : StringsCache)
+	for (auto string : m_StringsCache)
 	{
 		if (!strcmp(string, str))
 			return string;
 	}
 
 	const char *s = strcpy(new char[strlen(str) + 1], str);
-	StringsCache.push_back(s);
+	m_StringsCache.push_back(s);
 	return s;
 }
 
-void ClearStringsCache()
+void CResourceFile::ClearStringsCache()
 {
-	for (auto string : StringsCache)
+	for (auto string : m_StringsCache)
 		delete [] string;
 
-	StringsCache.clear();
+	m_StringsCache.clear();
 }
 
 CResourceBuffer::CResourceBuffer(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak)
 {
-	m_FileName = DuplicateString(filename);
-	m_CmdExec = (cmdExec[0] != '\0') ? DuplicateString(cmdExec) : NULL;
+	m_FileName = CResourceFile::DuplicateString(filename);
+	m_CmdExec = (cmdExec[0] != '\0') ? CResourceFile::DuplicateString(cmdExec) : nullptr;
 
 	m_Duplicate = false;
 
@@ -678,6 +674,7 @@ CResourceBuffer::CResourceBuffer(char *filename, char *cmdExec, flag_type_resour
 	m_FileHash = hash;
 	m_Line = line;
 	m_Break = bBreak;
+	m_AddEx = false;
 }
 
 CResourceFile::CResponseBuffer::CResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash)

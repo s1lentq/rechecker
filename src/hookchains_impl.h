@@ -28,9 +28,7 @@
 #pragma once
 #include "hookchains.h"
 
-#define MAX_HOOKS_IN_CHAIN 10
-
-extern void __declspec(noreturn) Sys_Error(const char* fmt, ...);
+#define MAX_HOOKS_IN_CHAIN 19
 
 // Implementation for chains in modules
 template<typename t_ret, typename ...t_args>
@@ -42,7 +40,7 @@ public:
 	IHookChainImpl(void** hooks, origfunc_t orig) : m_Hooks(hooks), m_OriginalFunc(orig)
 	{
 		if (orig == NULL)
-			Sys_Error("Non-void HookChain without original function.");
+			Sys_Error(__FUNCTION__ ": Non-void HookChain without original function.");
 	}
 
 	virtual ~IHookChainImpl() {}
@@ -94,8 +92,8 @@ public:
 	}
 
 	virtual void callOriginal(t_args... args) {
-		origfunc_t origfunc = (origfunc_t)m_OriginalFunc;
-		origfunc(args...);
+		if (m_OriginalFunc)
+			m_OriginalFunc(args...);
 	}
 
 private:
@@ -106,10 +104,12 @@ private:
 class AbstractHookChainRegistry {
 protected:
 	void* m_Hooks[MAX_HOOKS_IN_CHAIN + 1]; // +1 for null
+	int m_Priorities[MAX_HOOKS_IN_CHAIN + 1];
 	int m_NumHooks;
 
 protected:
-	void addHook(void* hookFunc);
+	void addHook(void* hookFunc, int priority);
+	bool findHook(void* hookFunc) const;
 	void removeHook(void* hookFunc);
 
 public:
@@ -129,8 +129,8 @@ public:
 		return chain.callNext(args...);
 	}
 
-	virtual void registerHook(hookfunc_t hook) {
-		addHook((void*)hook);
+	virtual void registerHook(hookfunc_t hook, int priority) {
+		addHook((void*)hook, priority);
 	}
 	virtual void unregisterHook(hookfunc_t hook) {
 		removeHook((void*)hook);
@@ -150,8 +150,8 @@ public:
 		chain.callNext(args...);
 	}
 
-	virtual void registerHook(hookfunc_t hook) {
-		addHook((void*)hook);
+	virtual void registerHook(hookfunc_t hook, int priority) {
+		addHook((void*)hook, priority);
 	}
 
 	virtual void unregisterHook(hookfunc_t hook) {

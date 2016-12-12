@@ -39,7 +39,10 @@ public:
 
 	bool IsBreak() const { return m_Break; };
 	bool IsDuplicate() const { return m_Duplicate; };
+	bool IsAddEx() const { return m_AddEx; };
+
 	void SetDuplicate() { m_Duplicate = true; };
+	void SetAddEx() { m_AddEx = true; };
 
 private:
 	uint32 m_FileHash;
@@ -52,6 +55,7 @@ private:
 
 	bool m_Duplicate;	// for to check for duplicate
 	bool m_Break;		// do not check a next files
+	bool m_AddEx;		// external add file
 };
 
 class CResourceFile: public IResourceFile
@@ -65,8 +69,12 @@ public:
 	void LoadResources();
 	int CreateResourceList();
 	void Log(flag_type_log type, const char *fmt, ...);
-
+	void PrintLog(IGameClient *pSenderClient, CResourceBuffer *res, flag_type_resources typeFind, uint32 hash);
 	bool FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash);
+
+	static const char *DuplicateString(const char *str);
+	static void ClearStringsCache();
+
 private:
 	// buffer for response list
 	class CResponseBuffer
@@ -110,11 +118,14 @@ private:
 	char m_PathDir[MAX_PATH_LENGTH];
 	char m_LogFilePath[MAX_PATH_LENGTH];	// log data
 
+	typedef std::vector<const char *> StringList;
+	static StringList m_StringsCache;
+
 public:
 	const char *FindFilenameOfHash(uint32 hash);
 	int GetConsistencyNum() const { return m_ConsistencyNum; }
 	uint32 GetPrevHash() const { return m_PrevHash; }
-	void AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak);
+	CResourceBuffer *AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak);
 	const ResourceList *GetResourceList() const { return &m_resourceList; }
 };
 

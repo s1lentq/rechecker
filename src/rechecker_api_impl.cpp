@@ -36,9 +36,15 @@ RecheckerFuncs_t g_RecheckerApiFuncs =
 	&GetResourceFile_api
 };
 
-void EXT_FUNC AddElement_api(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, bool bBreak)
+IResourceBuffer *EXT_FUNC AddElement_api(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, bool bBreak)
 {
-	g_pResource->AddElement(filename, cmdExec, flag, hash, 0, bBreak);
+	auto nRes = g_pResource->AddElement(filename, cmdExec, flag, hash, 0, bBreak);
+	if (!nRes->IsDuplicate()) {
+		// resource was added via the API
+		nRes->SetAddEx();
+	}
+
+	return nRes;
 }
 
 IResourceBuffer *EXT_FUNC FindElement_api(char *filename)

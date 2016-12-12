@@ -52,16 +52,6 @@
 #include <util.h>
 
 
-
-// Add overloaded ENTINDEX() version for const edict_t pointer.
-// The pfnIndexOfEdict() function takes a const edict_t pointer
-// as parameter anyway, so there is no reason why ENTINDEX()
-// shouldn't.
-inline  int ENTINDEX(const edict_t *pEdict) { 
-	return (*g_engfuncs.pfnIndexOfEdict)(pEdict);
-}
-
-
 // Also, create some nice inlines for engine callback combos.
 
 // Get a setinfo value from a player entity.
