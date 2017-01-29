@@ -192,13 +192,25 @@ void CResourceFile::Log(flag_type_log type, const char *fmt, ...)
 	fclose(fp);
 }
 
+#ifdef CreateDirectory
+#undef CreateDirectory
+#endif
+
 void CreateDirectory(const char *path)
 {
-	_mkdir(path
-#ifndef _WIN32
-	,0755
-#endif // _WIN32
-	);
+#ifdef _WIN32
+	DWORD attr = ::GetFileAttributesA(path);
+	if (attr == INVALID_FILE_ATTRIBUTES || (~attr & FILE_ATTRIBUTE_DIRECTORY))
+	{
+		_mkdir(path);
+	}
+#else
+	struct stat s;
+	if (stat(path, &s) != 0 || !S_ISDIR(s.st_mode))
+	{
+		_mkdir(path, 0755);
+	}
+#endif
 }
 
 void CResourceFile::Init()
@@ -319,7 +331,11 @@ void CResourceFile::LoadResources()
 
 	while (!feof(fp) && fgets(line, sizeof(line), fp))
 	{
-		pos = line;
+		// skip bytes BOM signature
+		if ((byte)line[0] == 0xEFu && (byte)line[1] == 0xBBu && (byte)line[2] == 0xBFu)
+			pos = &line[3];
+		else
+			pos = line;
 
 		cline++;
 

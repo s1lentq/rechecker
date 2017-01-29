@@ -6,7 +6,10 @@
 **/msvc/*.opensdf
 **/msvc/*.user
 **/msvc/*.suo
+**/msvc/*.db
+**/msvc/*.opendb
 **/msvc/*.aps
+**/msvc/.vs
 **/msvc/ipch
 **/PublishPath*.txt
 **/Server*.bat
