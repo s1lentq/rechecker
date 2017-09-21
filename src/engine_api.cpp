@@ -1,6 +1,6 @@
 #include "precompiled.h"
 
-enginefuncs_t meta_engfuncs_post = 
+enginefuncs_t meta_engfuncs_post =
 {
 	NULL,		// pfnPrecacheModel()
 	NULL,		// pfnPrecacheSound()
@@ -216,12 +216,12 @@ C_DLLEXPORT int GetEngineFunctions_Post(enginefuncs_t *pengfuncsFromEngine, int 
 {
 	if (!pengfuncsFromEngine)
 	{
-		ALERT(at_logged, __FUNCTION__ " called with null pengfuncsFromEngine");
+		ALERT(at_logged, "%s called with null pengfuncsFromEngine", __func__);
 		return FALSE;
 	}
 	else if (*interfaceVersion != ENGINE_INTERFACE_VERSION)
 	{
-		ALERT(at_logged, __FUNCTION__ " version mismatch; requested=%d ours=%d", *interfaceVersion, ENGINE_INTERFACE_VERSION);
+		ALERT(at_logged, "%s version mismatch; requested=%d ours=%d", __func__, *interfaceVersion, ENGINE_INTERFACE_VERSION);
 		// Tell metamod what version we had, so it can figure out who is out of date.
 		*interfaceVersion = ENGINE_INTERFACE_VERSION;
 		return FALSE;

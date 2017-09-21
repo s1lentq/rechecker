@@ -3,7 +3,6 @@
 DLL_FUNCTIONS *g_pFunctionTable;
 
 extern void ServerDeactivate_Post();
-extern void ClientPutInServer_Post(edict_t *pEntity);
 
 static DLL_FUNCTIONS gFunctionTable =
 {
@@ -92,7 +91,7 @@ static DLL_FUNCTIONS gFunctionTable_Post =
 	NULL,					// pfnClientConnect
 	NULL,					// pfnClientDisconnect
 	NULL,					// pfnClientKill
-	&ClientPutInServer_Post,					// pfnClientPutInServer
+	NULL,					// pfnClientPutInServer
 	NULL,					// pfnClientCommand
 	NULL,					// pfnClientUserInfoChanged
 	NULL,					// pfnServerActivate
@@ -137,12 +136,12 @@ C_DLLEXPORT int GetEntityAPI2(DLL_FUNCTIONS *pFunctionTable, int *interfaceVersi
 {
 	if (!pFunctionTable)
 	{
-		ALERT(at_logged, __FUNCTION__ " called with null pFunctionTable");
+		ALERT(at_logged, "%s called with null pFunctionTable", __func__);
 		return FALSE;
 	}
 	else if (*interfaceVersion != INTERFACE_VERSION)
 	{
-		ALERT(at_logged, __FUNCTION__ " version mismatch; requested=%d ours=%d", *interfaceVersion, INTERFACE_VERSION);
+		ALERT(at_logged, "%s version mismatch; requested=%d ours=%d", __func__, *interfaceVersion, INTERFACE_VERSION);
 
 		//! Tell metamod what version we had, so it can figure out who is out of date.
 		*interfaceVersion = INTERFACE_VERSION;
@@ -159,12 +158,12 @@ C_DLLEXPORT int GetEntityAPI2_Post(DLL_FUNCTIONS *pFunctionTable, int *interface
 {
 	if (!pFunctionTable)
 	{
-		ALERT(at_logged, __FUNCTION__ " called with null pFunctionTable");
+		ALERT(at_logged, "%s called with null pFunctionTable", __func__);
 		return FALSE;
 	}
 	else if (*interfaceVersion != INTERFACE_VERSION)
 	{
-		ALERT(at_logged, __FUNCTION__ " version mismatch; requested=%d ours=%d", *interfaceVersion, INTERFACE_VERSION);
+		ALERT(at_logged, "%s version mismatch; requested=%d ours=%d", __func__, *interfaceVersion, INTERFACE_VERSION);
 
 		//! Tell metamod what version we had, so it can figure out who is out of date.
 		*interfaceVersion = INTERFACE_VERSION;

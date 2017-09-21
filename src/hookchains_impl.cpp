@@ -21,13 +21,13 @@
 
 AbstractHookChainRegistry::AbstractHookChainRegistry()
 {
-	memset(m_Hooks, 0, sizeof(m_Hooks));
-	memset(m_Priorities, 0, sizeof(m_Priorities));
+	Q_memset(m_Hooks, 0, sizeof(m_Hooks));
+	Q_memset(m_Priorities, 0, sizeof(m_Priorities));
 
 	m_NumHooks = 0;
 }
 
-bool AbstractHookChainRegistry::findHook(void* hookFunc) const
+bool AbstractHookChainRegistry::findHook(void *hookFunc) const
 {
 	for (auto i = 0; i < m_NumHooks; i++) {
 		if (m_Hooks[i] == hookFunc)
@@ -37,14 +37,14 @@ bool AbstractHookChainRegistry::findHook(void* hookFunc) const
 	return false;
 }
 
-void AbstractHookChainRegistry::addHook(void* hookFunc, int priority)
+void AbstractHookChainRegistry::addHook(void *hookFunc, int priority)
 {
 	if (!hookFunc) {
-		Sys_Error(__FUNCTION__ " Parameter hookFunc can't be a nullptr");
+		Sys_Error("%s: Parameter hookFunc can't be a nullptr", __func__);
 	}
 
 	if (findHook(hookFunc)) {
-		Sys_Error(__FUNCTION__ " The same handler can't be used twice on the hookchain.");
+		Sys_Error("%s: The same handler can't be used twice on the hookchain.", __func__);
 	}
 
 	for (auto i = 0; i < MAX_HOOKS_IN_CHAIN; i++)
@@ -63,13 +63,13 @@ void AbstractHookChainRegistry::addHook(void* hookFunc, int priority)
 	}
 
 	if (m_NumHooks >= MAX_HOOKS_IN_CHAIN) {
-		Sys_Error(__FUNCTION__ " MAX_HOOKS_IN_CHAIN limit hit");
+		Sys_Error("%s: MAX_HOOKS_IN_CHAIN limit hit", __func__);
 	}
 
 	m_NumHooks++;
 }
 
-void AbstractHookChainRegistry::removeHook(void* hookFunc) {
+void AbstractHookChainRegistry::removeHook(void *hookFunc) {
 
 	// erase hook
 	for (auto i = 0; i < m_NumHooks; i++)
@@ -79,8 +79,8 @@ void AbstractHookChainRegistry::removeHook(void* hookFunc) {
 			--m_NumHooks;
 			if (m_NumHooks != i)
 			{
-				memmove(&m_Hooks[i], &m_Hooks[i + 1], (m_NumHooks - i) * sizeof(m_Hooks[0]));
-				memmove(&m_Priorities[i], &m_Priorities[i + 1], (m_NumHooks - i) * sizeof(m_Priorities[0]));
+				Q_memmove(&m_Hooks[i], &m_Hooks[i + 1], (m_NumHooks - i) * sizeof(m_Hooks[0]));
+				Q_memmove(&m_Priorities[i], &m_Priorities[i + 1], (m_NumHooks - i) * sizeof(m_Priorities[0]));
 				m_Hooks[m_NumHooks] = NULL;
 			}
 			else

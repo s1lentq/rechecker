@@ -8,11 +8,7 @@ IRehldsServerData *g_RehldsServerData;
 
 rehlds_ret RehldsApi_Init()
 {
-#ifdef WIN32
-	CSysModule *engineModule = Sys_LoadModule("swds.dll");
-#else
-	CSysModule *engineModule = Sys_LoadModule("engine_i486.so");
-#endif // WIN32
+	CSysModule *engineModule = Sys_LoadModule(ENGINE_LIB);
 
 	if (!engineModule)
 		return RETURN_NOT_FOUND;
@@ -26,7 +22,7 @@ rehlds_ret RehldsApi_Init()
 
 	if (!g_RehldsApi)
 	{
-		UTIL_LogPrintf(__FUNCTION__ " : REHLDS can't find Interface API\n");
+		UTIL_LogPrintf("%s : REHLDS can't find Interface API\n", __func__);
 		return RETURN_NOT_FOUND;
 	}
 
@@ -35,13 +31,13 @@ rehlds_ret RehldsApi_Init()
 
 	if (majorVersion != REHLDS_API_VERSION_MAJOR)
 	{
-		UTIL_LogPrintf(__FUNCTION__ " : REHLDS Api major version mismatch; expected %d, real %d\n", REHLDS_API_VERSION_MAJOR, majorVersion);
+		UTIL_LogPrintf("%s : REHLDS Api major version mismatch; expected %d, real %d\n", __func__, REHLDS_API_VERSION_MAJOR, majorVersion);
 		return RETURN_MAJOR_MISMATCH;
 	}
 
 	if (minorVersion < REHLDS_API_VERSION_MINOR)
 	{
-		UTIL_LogPrintf(__FUNCTION__ " : REHLDS Api minor version mismatch; expected at least %d, real %d\n", REHLDS_API_VERSION_MINOR, minorVersion);
+		UTIL_LogPrintf("%s : REHLDS Api minor version mismatch; expected at least %d, real %d\n", __func__, REHLDS_API_VERSION_MINOR, minorVersion);
 		return RETURN_MINOR_MISMATCH;
 	}
 

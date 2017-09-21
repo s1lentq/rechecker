@@ -14,7 +14,7 @@ private:
 	void ResetValues();
 
 private:
-	char m_PathDir[MAX_PATH_LENGTH];
+	char m_PathDir[MAX_PATH];
 
 	// settings
 	float m_DelayExec;

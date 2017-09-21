@@ -28,19 +28,19 @@
 #pragma once
 #include "hookchains.h"
 
-#define MAX_HOOKS_IN_CHAIN 19
+const int MAX_HOOKS_IN_CHAIN = 19;
 
 // Implementation for chains in modules
 template<typename t_ret, typename ...t_args>
-class IHookChainImpl : public IHookChain<t_ret, t_args...> {
+class IHookChainImpl: public IHookChain<t_ret, t_args...> {
 public:
-	typedef t_ret(*hookfunc_t)(IHookChain<t_ret, t_args...>*, t_args...);
-	typedef t_ret(*origfunc_t)(t_args...);
+	typedef t_ret (*hookfunc_t)(IHookChain<t_ret, t_args...> *, t_args...);
+	typedef t_ret (*origfunc_t)(t_args...);
 
-	IHookChainImpl(void** hooks, origfunc_t orig) : m_Hooks(hooks), m_OriginalFunc(orig)
+	IHookChainImpl(void **hooks, origfunc_t orig) : m_Hooks(hooks), m_OriginalFunc(orig)
 	{
 		if (orig == NULL)
-			Sys_Error(__FUNCTION__ ": Non-void HookChain without original function.");
+			Sys_Error("%s: Non-void HookChain without original function.", __func__);
 	}
 
 	virtual ~IHookChainImpl() {}
@@ -62,18 +62,18 @@ public:
 	}
 
 private:
-	void** m_Hooks;
+	void **m_Hooks;
 	origfunc_t m_OriginalFunc;
 };
 
 // Implementation for void chains in modules
 template<typename ...t_args>
-class IVoidHookChainImpl : public IVoidHookChain<t_args...> {
+class IVoidHookChainImpl: public IVoidHookChain<t_args...> {
 public:
-	typedef void(*hookfunc_t)(IVoidHookChain<t_args...>*, t_args...);
-	typedef void(*origfunc_t)(t_args...);
+	typedef void (*hookfunc_t)(IVoidHookChain<t_args...> *, t_args...);
+	typedef void (*origfunc_t)(t_args...);
 
-	IVoidHookChainImpl(void** hooks, origfunc_t orig) : m_Hooks(hooks), m_OriginalFunc(orig) {}
+	IVoidHookChainImpl(void **hooks, origfunc_t orig) : m_Hooks(hooks), m_OriginalFunc(orig) {}
 	virtual ~IVoidHookChainImpl() {}
 
 	virtual void callNext(t_args... args) {
@@ -97,20 +97,20 @@ public:
 	}
 
 private:
-	void** m_Hooks;
+	void **m_Hooks;
 	origfunc_t m_OriginalFunc;
 };
 
 class AbstractHookChainRegistry {
 protected:
-	void* m_Hooks[MAX_HOOKS_IN_CHAIN + 1]; // +1 for null
+	void *m_Hooks[MAX_HOOKS_IN_CHAIN + 1]; // +1 for null
 	int m_Priorities[MAX_HOOKS_IN_CHAIN + 1];
 	int m_NumHooks;
 
 protected:
-	void addHook(void* hookFunc, int priority);
-	bool findHook(void* hookFunc) const;
-	void removeHook(void* hookFunc);
+	void addHook(void *hookFunc, int priority);
+	bool findHook(void *hookFunc) const;
+	void removeHook(void *hookFunc);
 
 public:
 	AbstractHookChainRegistry();
@@ -119,8 +119,8 @@ public:
 template<typename t_ret, typename ...t_args>
 class IHookChainRegistryImpl : public IHookChainRegistry < t_ret, t_args...>, public AbstractHookChainRegistry {
 public:
-	typedef t_ret(*hookfunc_t)(IHookChain<t_ret, t_args...>*, t_args...);
-	typedef t_ret(*origfunc_t)(t_args...);
+	typedef t_ret (*hookfunc_t)(IHookChain<t_ret, t_args...> *, t_args...);
+	typedef t_ret (*origfunc_t)(t_args...);
 
 	virtual ~IHookChainRegistryImpl() { }
 
@@ -130,18 +130,18 @@ public:
 	}
 
 	virtual void registerHook(hookfunc_t hook, int priority) {
-		addHook((void*)hook, priority);
+		addHook((void *)hook, priority);
 	}
 	virtual void unregisterHook(hookfunc_t hook) {
-		removeHook((void*)hook);
+		removeHook((void *)hook);
 	}
 };
 
 template<typename ...t_args>
-class IVoidHookChainRegistryImpl : public IVoidHookChainRegistry <t_args...>, public AbstractHookChainRegistry {
+class IVoidHookChainRegistryImpl: public IVoidHookChainRegistry <t_args...>, public AbstractHookChainRegistry {
 public:
-	typedef void(*hookfunc_t)(IVoidHookChain<t_args...>*, t_args...);
-	typedef void(*origfunc_t)(t_args...);
+	typedef void (*hookfunc_t)(IVoidHookChain<t_args...> *, t_args...);
+	typedef void (*origfunc_t)(t_args...);
 
 	virtual ~IVoidHookChainRegistryImpl() { }
 
@@ -151,10 +151,10 @@ public:
 	}
 
 	virtual void registerHook(hookfunc_t hook, int priority) {
-		addHook((void*)hook, priority);
+		addHook((void *)hook, priority);
 	}
 
 	virtual void unregisterHook(hookfunc_t hook) {
-		removeHook((void*)hook);
+		removeHook((void *)hook);
 	}
 };

@@ -454,9 +454,6 @@
     <ClInclude Include="..\public\FileSystem.h">
       <Filter>sdk\public</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\interface.h">
-      <Filter>sdk\public</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\main.h" />
     <ClInclude Include="..\src\precompiled.h" />
     <ClInclude Include="..\src\engine_rehlds.h" />
@@ -475,9 +472,6 @@
     <ClCompile Include="..\common\parsemsg.cpp">
       <Filter>sdk\common</Filter>
     </ClCompile>
-    <ClCompile Include="..\public\interface.cpp">
-      <Filter>sdk\public</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\dllapi.cpp" />
     <ClCompile Include="..\src\engine_api.cpp" />
     <ClCompile Include="..\src\engine_rehlds.cpp" />
@@ -490,6 +484,7 @@
     <ClCompile Include="..\src\resource.cpp" />
     <ClCompile Include="..\src\hookchains_impl.cpp" />
     <ClCompile Include="..\src\rechecker_api_impl.cpp" />
+    <ClCompile Include="..\src\public_amalgamation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sdk">

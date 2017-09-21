@@ -1,11 +1,11 @@
 #pragma once
 
-#define FILE_INI_RESOURCES	"resources.ini"
-#define MAX_CMD_LENGTH		128
+#define FILE_INI_RESOURCES		"resources.ini"
+#define MAX_CMD_LENGTH			128
 #define MAX_RANGE_CONSISTENCY	1024
 
-#define RESOURCE_INDEX_BITS	12
-#define RESOURCE_MAX_COUNT	(1 << RESOURCE_INDEX_BITS)
+#define RESOURCE_INDEX_BITS		12
+#define RESOURCE_MAX_COUNT		(1 << RESOURCE_INDEX_BITS)
 
 enum flag_type_log
 {
@@ -28,13 +28,13 @@ enum arg_type_e
 class CResourceBuffer: public IResourceBuffer
 {
 public:
-	CResourceBuffer(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak);
+	CResourceBuffer(const char *filename, char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak);
 
 	uint32 GetFileHash() const { return m_FileHash; };
-	flag_type_resources GetFileFlag() const { return m_Flag; };
+	ResourceType_e GetFileFlag() const { return m_Flag; };
 
 	const char *GetFileName() const { return m_FileName; };
-	const char *GetCmdExec() const { return m_CmdExec; };
+	const char *GetCmdExec() const { return (m_CmdExec == nullptr) ? "" : m_CmdExec; };
 	int GetLine() const { return m_Line; };
 
 	bool IsBreak() const { return m_Break; };
@@ -47,7 +47,7 @@ public:
 private:
 	uint32 m_FileHash;
 
-	flag_type_resources m_Flag;
+	ResourceType_e m_Flag;
 	int m_Line;
 
 	const char *m_FileName;
@@ -69,7 +69,7 @@ public:
 	void LoadResources();
 	int CreateResourceList();
 	void Log(flag_type_log type, const char *fmt, ...);
-	void PrintLog(IGameClient *pSenderClient, CResourceBuffer *res, flag_type_resources typeFind, uint32 hash);
+	void PrintLog(IGameClient *pSenderClient, CResourceBuffer *res, ResourceType_e typeFind, uint32 hash);
 	bool FileConsistencyResponse(IGameClient *pSenderClient, resource_t *resource, uint32 hash);
 
 	static const char *DuplicateString(const char *str);
@@ -77,21 +77,23 @@ public:
 
 private:
 	// buffer for response list
-	class CResponseBuffer
+	class CResponseBuffer: public IResponseBuffer
 	{
 	public:
-		CResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash);
+		CResponseBuffer(IGameClient *pSenderClient, char *filename, uint32 hash, uint32 prevHash);
 
 		int GetUserID() const { return m_UserID; };
 		IGameClient *GetGameClient() const { return m_pClient; };
 		const char *GetFileName() const { return m_FileName; };
 		uint32 GetClientHash() const { return m_ClientHash; };
+		uint32 GetPrevHash() const { return m_PrevHash; };
 
 	private:
 		int m_UserID;
 		IGameClient *m_pClient;
 		const char *m_FileName;
 		uint32 m_ClientHash;
+		uint32 m_PrevHash;
 	};
 
 private:
@@ -115,18 +117,20 @@ private:
 	int m_ConsistencyNum;
 	uint32 m_PrevHash;
 
-	char m_PathDir[MAX_PATH_LENGTH];
-	char m_LogFilePath[MAX_PATH_LENGTH];	// log data
+	char m_PathDir[MAX_PATH];
+	char m_LogFilePath[MAX_PATH];	// log data
 
 	typedef std::vector<const char *> StringList;
 	static StringList m_StringsCache;
 
 public:
+	IResourceBuffer *GetResourceFile(const char *filename);
+	IResponseBuffer *GetResponseFile(IGameClient *pClient, const char *filename, bool *firstFound = nullptr);
+
 	const char *FindFilenameOfHash(uint32 hash);
 	int GetConsistencyNum() const { return m_ConsistencyNum; }
 	uint32 GetPrevHash() const { return m_PrevHash; }
-	CResourceBuffer *AddElement(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, int line, bool bBreak);
-	const ResourceList *GetResourceList() const { return &m_resourceList; }
+	CResourceBuffer *Add(const char *filename, char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak);
 };
 
 extern CResourceFile *g_pResource;

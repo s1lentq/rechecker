@@ -15,7 +15,7 @@ CExecMngr::CBufExec::~CBufExec()
 	;
 }
 
-void CExecMngr::AddElement(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
+void CExecMngr::Add(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash)
 {
 	m_execList.push_back(new CBufExec(pClient, pResource, responseHash));
 }
@@ -86,7 +86,7 @@ void EXT_FUNC CmdExec_hook(IGameClient *pClient, IResourceBuffer *pRes, char *cm
 	SERVER_COMMAND(cmdExec);
 }
 
-void CExecMngr::CommandExecute(IGameClient *pClient)
+void CExecMngr::ExecuteCommand(IGameClient *pClient)
 {
 	bool bBreak = false;
 	auto iter = m_execList.begin();
@@ -133,6 +133,10 @@ void CExecMngr::Clear(IGameClient *pClient)
 {
 	if (!pClient)
 	{
+		for (auto exec : m_execList) {
+			delete exec;
+		}
+
 		m_execList.clear();
 		return;
 	}

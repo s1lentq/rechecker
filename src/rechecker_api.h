@@ -30,73 +30,103 @@
 #include "hookchains.h"
 #include "interface.h"
 
-#define RECHECKER_API_VERSION_MAJOR 1
-#define RECHECKER_API_VERSION_MINOR 0
+#define RECHECKER_API_VERSION_MAJOR 2
+#define RECHECKER_API_VERSION_MINOR 1
 
-enum flag_type_resources
+enum ResourceType_e
 {
-	FLAG_TYPE_NONE = 0,
-	FLAG_TYPE_EXISTS,		// to comparison with the specified hash value
-	FLAG_TYPE_MISSING,		// check it missing file on client
-	FLAG_TYPE_IGNORE,		// ignore the specified hash value
-	FLAG_TYPE_HASH_ANY,		// any file with any the hash value
+	RES_TYPE_NONE = 0,
+	RES_TYPE_EXISTS,		// to comparison with the specified hash value
+	RES_TYPE_MISSING,		// check it missing file on client
+	RES_TYPE_IGNORE,		// ignore the specified hash value
+	RES_TYPE_HASH_ANY,		// any file with any the hash value
 };
 
 class IResourceBuffer;
 
 // FileConsistencyProcess hook
-typedef IVoidHookChain<IGameClient *, IResourceBuffer *, flag_type_resources, uint32> IRecheckerHook_FileConsistencyProcess;
-typedef IVoidHookChainRegistry<IGameClient *, IResourceBuffer *, flag_type_resources, uint32> IRecheckerHookRegistry_FileConsistencyProcess;
+typedef IVoidHookChain<IGameClient *, IResourceBuffer *, ResourceType_e, uint32> IRecheckerHook_FileConsistencyProcess;
+typedef IVoidHookChainRegistry<IGameClient *, IResourceBuffer *, ResourceType_e, uint32> IRecheckerHookRegistry_FileConsistencyProcess;
 
 // CmdExec hook
 typedef IVoidHookChain<IGameClient *, IResourceBuffer *, char *, uint32> IRecheckerHook_CmdExec;
 typedef IVoidHookChainRegistry<IGameClient *, IResourceBuffer *, char *, uint32> IRecheckerHookRegistry_CmdExec;
 
+// FileConsistencyFinal hook
+typedef IVoidHookChain<IGameClient *> IRecheckerHook_FileConsistencyFinal;
+typedef IVoidHookChainRegistry<IGameClient *> IRecheckerHookRegistry_FileConsistencyFinal;
+
 class IRecheckerHookchains {
-public:
+protected:
 	virtual ~IRecheckerHookchains() {}
 
+public:
 	virtual IRecheckerHookRegistry_FileConsistencyProcess *FileConsistencyProcess() = 0;
 	virtual IRecheckerHookRegistry_CmdExec *CmdExec() = 0;
+	virtual IRecheckerHookRegistry_FileConsistencyFinal *FileConsistencyFinal() = 0;
 };
 
 class IResourceBuffer {
-public:
+protected:
 	virtual ~IResourceBuffer() {}
 
+public:
 	virtual uint32 GetFileHash() const = 0;
-	virtual flag_type_resources GetFileFlag() const = 0;
+	virtual ResourceType_e GetFileFlag() const = 0;
 
 	virtual const char *GetFileName() const = 0;
 	virtual const char *GetCmdExec() const = 0;
 	virtual int GetLine() const = 0;
 
 	virtual bool IsBreak() const = 0;			// is have do not check a next files
-	virtual bool IsDuplicate() const = 0;			// it is already have in resourcelist
+	virtual bool IsDuplicate() const = 0;		// it is already have in resourcelist
 	virtual bool IsAddEx() const = 0;			// if it added via API
 };
 
-class IResourceFile {
+class IResponseBuffer {
+protected:
+	virtual ~IResponseBuffer() {}
+
 public:
+	virtual int GetUserID() const = 0;
+	virtual IGameClient *GetGameClient() const = 0;
+	virtual const char *GetFileName() const = 0;
+	virtual uint32 GetClientHash() const = 0;
+	virtual uint32 GetPrevHash() const = 0;
+};
+
+class IResourceFile {
+protected:
 	virtual ~IResourceFile() {}
 
+public:
 	virtual const char *FindFilenameOfHash(uint32 hash) = 0;
 	virtual int GetConsistencyNum() const = 0;
 	virtual uint32 GetPrevHash() const = 0;
 };
 
+#undef FindResource
+
+using query_func_t = void (*)(IGameClient *pClient, uint32 hash, int uniqueId);
+
 struct RecheckerFuncs_t {
-	IResourceBuffer *(*AddElement)(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, bool bBreak);
-	IResourceBuffer*(*FindElement)(char *filename);
-	IResourceFile*(*GetResourceFile)();
+	IResourceBuffer *(*AddResource)(const char *filename, char *cmdExec, ResourceType_e flag, uint32 hash, bool bBreak);
+	IResourceBuffer *(*AddQueryFile)(const char *filename, ResourceType_e flag, uint32 hash, query_func_t callback, int uniqueId);
+	void (*RemoveQueryFile)(int uniqueId);
+	void (*ClearQueryFiles)();
+	IResourceBuffer *(*FindResource)(const char *filename);
+	IResourceFile *(*GetResource)();
+	IResponseBuffer *(*GetResponseFile)(IGameClient *pClient, const char *filename);
+	bool (*IsResourceExists)(IGameClient *pClient, const char *filename, uint32 &hash);
 };
 
 class IRecheckerApi {
-public:
+protected:
 	virtual ~IRecheckerApi() { }
 
+public:
 	virtual int GetMajorVersion() = 0;
 	virtual int GetMinorVersion() = 0;
-	virtual const RecheckerFuncs_t* GetFuncs() = 0;
-	virtual IRecheckerHookchains* GetHookchains() = 0;
+	virtual const RecheckerFuncs_t *GetFuncs() = 0;
+	virtual IRecheckerHookchains *GetHookchains() = 0;
 };

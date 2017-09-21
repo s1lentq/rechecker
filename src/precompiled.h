@@ -1,17 +1,7 @@
 #pragma once
 
-#ifdef _WIN32 // WINDOWS
-	#pragma warning(disable : 4005)
-#else
-	#define _stricmp strcasecmp
-	#define _mkdir mkdir
-	#ifdef __FUNCTION__
-		#undef __FUNCTION__
-	#endif
-	#define __FUNCTION__ __func__
-#endif // _WIN32
-
-#define MAX_PATH_LENGTH		260
+#include "basetypes.h"
+#include "archtypes.h"
 
 #include <list>
 #include <vector>
@@ -29,16 +19,15 @@
 #include "engine_rehlds.h"
 #include "consistency.h"
 
+#include "engine_hlds_api.h"
 #include "hookchains_impl.h"
 #include "rechecker_api.h"
 #include "rechecker_api_impl.h"
 
 #include "main.h"
 #include "task.h"
-//#include "config.h"
 #include "resource.h"
 #include "cmdexec.h"
-//#include "sdk_util.h"		// UTIL_LogPrintf, etc
 
 #undef DLLEXPORT
 

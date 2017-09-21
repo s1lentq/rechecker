@@ -3,8 +3,8 @@
 class CExecMngr
 {
 public:
-	void AddElement(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash);
-	void CommandExecute(IGameClient *pClient);
+	void Add(IGameClient *pClient, CResourceBuffer *pResource, uint32 responseHash);
+	void ExecuteCommand(IGameClient *pClient);
 	void Clear(IGameClient *pClient = NULL);
 
 private:

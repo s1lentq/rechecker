@@ -162,7 +162,6 @@
     <ClInclude Include="..\pm_shared\pm_movevars.h" />
     <ClInclude Include="..\pm_shared\pm_shared.h" />
     <ClInclude Include="..\public\FileSystem.h" />
-    <ClInclude Include="..\public\interface.h" />
     <ClInclude Include="..\public\rechecker_api.h" />
     <ClInclude Include="..\public\rechecker_interfaces.h" />
     <ClInclude Include="..\src\cmdexec.h" />
@@ -178,11 +177,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\public\interface.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="..\src\cmdexec.cpp" />
     <ClCompile Include="..\src\hookchains_impl.cpp" />
+    <ClCompile Include="..\src\public_amalgamation.cpp" />
     <ClCompile Include="..\src\rechecker_api_impl.cpp" />
     <ClCompile Include="..\src\resource.cpp" />
     <ClCompile Include="..\src\dllapi.cpp" />
@@ -260,7 +257,8 @@
       <ModuleDefinitionFile>rechecker.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST "$(ProjectDir)PostBuild.bat" (CALL "$(ProjectDir)PostBuild.bat" "$(TargetDir)" "$(TargetName)" "$(TargetExt)" "$(ProjectDir)")</Command>
+      <Command>IF EXIST "$(ProjectDir)PostBuild.bat" (CALL "$(ProjectDir)PostBuild.bat" "$(TargetDir)" "$(TargetName)" "$(TargetExt)" "$(ProjectDir)")
+IF EXIST "$(ProjectDir)ServerStart_cs_6153.bat" (CALL "$(ProjectDir)ServerStart_cs_6153.bat")</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Automatic deployment script</Message>

@@ -26,18 +26,13 @@
 *
 */
 
-#ifndef CONSISTENCY_H
-#define CONSISTENCY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
-#define MAX_CONSISTENCY_LIST	512
+const int MAX_CONSISTENCY_LIST = 512;
 
-/* <7508> ../engine/consistency.h:9 */
 typedef struct consistency_s
 {
-	char * filename;
+	char *filename;
 	int issound;
 	int orig_index;
 	int value;
@@ -45,5 +40,3 @@ typedef struct consistency_s
 	float mins[3];
 	float maxs[3];
 } consistency_t;
-
-#endif // CONSISTENCY_H

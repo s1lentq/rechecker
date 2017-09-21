@@ -29,50 +29,106 @@
 
 CRecheckerApi g_RecheckerApi;
 CRecheckerHookchains g_RecheckerHookchains;
-RecheckerFuncs_t g_RecheckerApiFuncs = 
+RecheckerFuncs_t g_RecheckerApiFuncs =
 {
-	&AddElement_api,
-	&FindElement_api,
-	&GetResourceFile_api
+	&AddResource_api,
+	&AddQueryFile_api,
+	&RemoveQueryFile_api,
+	&ClearQueryFiles_api,
+	&FindResource_api,
+	&GetResource_api,
+	&GetResponseFile_api,
+	&IsResourceExists_api,
 };
 
-IResourceBuffer *EXT_FUNC AddElement_api(char *filename, char *cmdExec, flag_type_resources flag, uint32 hash, bool bBreak)
+IResourceBuffer *EXT_FUNC AddResource_api(const char *filename, char *cmdExec, ResourceType_e flag, uint32 hash, bool bBreak)
 {
-	auto nRes = g_pResource->AddElement(filename, cmdExec, flag, hash, 0, bBreak);
-	if (!nRes->IsDuplicate()) {
-		// resource was added via the API
-		nRes->SetAddEx();
-	}
+	auto nRes = g_pResource->Add(filename, cmdExec, flag, hash, 0, bBreak);
 
+	// resource was added via the API
+	nRes->SetAddEx();
 	return nRes;
 }
 
-IResourceBuffer *EXT_FUNC FindElement_api(char *filename)
-{
-	// to mark files which are not required to add to the resource again
-	for (auto res : (*g_pResource->GetResourceList()))
-	{
-		if (_stricmp(res->GetFileName(), filename) == 0)
-		{
-			// resource name already have, return its;
-			return res;
-		}
-	}
+std::vector<query_file_t *> g_QueryFiles;
 
-	return nullptr;
+IResourceBuffer *EXT_FUNC AddQueryFile_api(const char *filename, ResourceType_e flag, uint32 hash, query_func_t callback, int uniqueId)
+{
+	g_QueryFiles.push_back(new query_file_t(filename, flag, hash, callback, uniqueId));
+
+	auto nRes = g_pResource->Add(filename, "", flag, hash, -1, false);
+
+	// resource was added via the API
+	nRes->SetAddEx();
+	return nRes;
 }
 
-IResourceFile *EXT_FUNC GetResourceFile_api()
+void EXT_FUNC ClearQueryFiles_api()
 {
+	for (auto query : g_QueryFiles) {
+		delete query;
+	}
+
+	g_QueryFiles.clear();
+}
+
+void EXT_FUNC RemoveQueryFile_api(int uniqueId)
+{
+	auto iter = g_QueryFiles.begin();
+	while (iter != g_QueryFiles.end())
+	{
+		if ((*iter)->uniqueId != uniqueId) {
+			iter++;
+			continue;
+		}
+
+		delete (*iter);
+		iter = g_QueryFiles.erase(iter);
+	}
+
+	if (g_QueryFiles.size() <= 0) {
+		g_QueryFiles.clear();
+	}
+}
+
+IResourceBuffer *EXT_FUNC FindResource_api(const char *filename) {
+	return g_pResource->GetResourceFile(filename);
+}
+
+IResponseBuffer *EXT_FUNC GetResponseFile_api(IGameClient *pClient, const char *filename) {
+	return g_pResource->GetResponseFile(pClient, filename);
+}
+
+bool EXT_FUNC IsResourceExists_api(IGameClient *pClient, const char *filename, uint32 &hash)
+{
+	auto res = g_pResource->GetResponseFile(pClient, filename);
+	if (res->GetClientHash() == res->GetPrevHash()) {
+		// file is missing?
+		return false;
+	}
+
+	if (hash && res->GetClientHash() == hash) {
+		return true;
+	}
+
+	hash = res->GetClientHash();
+	return true;
+}
+
+IResourceFile *EXT_FUNC GetResource_api() {
 	return g_pResource;
 }
 
-IRecheckerHookRegistry_FileConsistencyProcess* CRecheckerHookchains::FileConsistencyProcess() {
+IRecheckerHookRegistry_FileConsistencyProcess *CRecheckerHookchains::FileConsistencyProcess() {
 	return &m_FileConsistencyProcess;
 }
 
-IRecheckerHookRegistry_CmdExec* CRecheckerHookchains::CmdExec() {
+IRecheckerHookRegistry_CmdExec *CRecheckerHookchains::CmdExec() {
 	return &m_CmdExec;
+}
+
+IRecheckerHookRegistry_FileConsistencyFinal *CRecheckerHookchains::FileConsistencyFinal() {
+	return &m_FileConsistencyFinal;
 }
 
 int EXT_FUNC CRecheckerApi::GetMajorVersion()
@@ -85,12 +141,12 @@ int EXT_FUNC CRecheckerApi::GetMinorVersion()
 	return RECHECKER_API_VERSION_MINOR;
 }
 
-const RecheckerFuncs_t* EXT_FUNC CRecheckerApi::GetFuncs()
+const RecheckerFuncs_t *EXT_FUNC CRecheckerApi::GetFuncs()
 {
 	return &g_RecheckerApiFuncs;
 }
 
-IRecheckerHookchains* EXT_FUNC CRecheckerApi::GetHookchains()
+IRecheckerHookchains *EXT_FUNC CRecheckerApi::GetHookchains()
 {
 	return &g_RecheckerHookchains;
 }

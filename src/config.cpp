@@ -9,7 +9,7 @@ CConfig Config;
 void CConfig::Init()
 {
 	char *pos;
-	char path[MAX_PATH_LENGTH];
+	char path[MAX_PATH];
 	
 	strncpy(path, GET_PLUGIN_PATH(PLID), sizeof(path) - 1);
 	path[sizeof(path) - 1] = '\0';
@@ -73,7 +73,7 @@ void CConfig::Load()
 	
 	if (fp == NULL)
 	{
-		UTIL_Printf(__FUNCTION__ ": can't find path to " FILE_INI_CONFIG "\n");
+		UTIL_Printf("%s: can't find path to " FILE_INI_CONFIG "\n", __func__);
 		return;
 	}
 

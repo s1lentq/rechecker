@@ -68,6 +68,8 @@ bool OnMetaAttach()
 	g_RehldsHookchains->SV_DropClient()->registerHook(&SV_DropClient);
 	g_RehldsHookchains->SV_CheckConsistencyResponse()->registerHook(&SV_CheckConsistencyResponse);
 	g_RehldsHookchains->SV_TransferConsistencyInfo()->registerHook(&SV_TransferConsistencyInfo);
+	g_RehldsHookchains->SV_Spawn_f()->registerHook(&SV_Spawn_f);
+	g_RehldsHookchains->HandleNetCommand()->registerHook(&HandleNetCommand);
 
 	SV_AddResource = g_RehldsFuncs->SV_AddResource;
 	SV_FileInConsistencyList = g_RehldsFuncs->SV_FileInConsistencyList;
@@ -107,6 +109,10 @@ void OnMetaDetach()
 	g_RehldsHookchains->SV_DropClient()->unregisterHook(&SV_DropClient);
 	g_RehldsHookchains->SV_CheckConsistencyResponse()->unregisterHook(&SV_CheckConsistencyResponse);
 	g_RehldsHookchains->SV_TransferConsistencyInfo()->unregisterHook(&SV_TransferConsistencyInfo);
+	g_RehldsHookchains->SV_Spawn_f()->unregisterHook(&SV_Spawn_f);
+	g_RehldsHookchains->HandleNetCommand()->unregisterHook(&HandleNetCommand);
+
+	ClearQueryFiles_api();
 }
 
 void ServerDeactivate_Post()
@@ -141,24 +147,6 @@ int SV_TransferConsistencyInfo(IRehldsHook_SV_TransferConsistencyInfo *chain)
 	return chain->callNext() + nConsistency;
 }
 
-void ClientPutInServer_Post(edict_t *pEntity)
-{
-	int nIndex = ENTINDEX(pEntity) - 1;
-
-	if (nIndex < 0 || nIndex >= gpGlobals->maxClients)
-		RETURN_META(MRES_IGNORED);
-
-	IGameClient *pClient = g_RehldsApi->GetServerStatic()->GetClient(nIndex);
-
-	// client is connected to putinserver, go execute cmd out buffer
-	Exec.CommandExecute(pClient);
-
-	// clear temporary files of response
-	g_pResource->Clear(pClient);
-
-	SET_META_RESULT(MRES_IGNORED);
-}
-
 bool SV_CheckConsistencyResponse(IRehldsHook_SV_CheckConsistencyResponse *chain, IGameClient *pSenderClient, resource_t *resource, uint32 hash)
 {
 	if (!g_pResource->FileConsistencyResponse(pSenderClient, resource, hash))
@@ -166,4 +154,34 @@ bool SV_CheckConsistencyResponse(IRehldsHook_SV_CheckConsistencyResponse *chain,
 
 	// call next hook and take return of values from original func
 	return chain->callNext(pSenderClient, resource, hash);
+}
+
+void SV_Spawn_f(IRehldsHook_SV_Spawn_f *chain)
+{
+	chain->callNext();
+
+	auto pClient = g_RehldsFuncs->GetHostClient();
+	if (!pClient->IsConnected()) {
+		return;
+	}
+
+	bool haveAtLeastOne;
+	g_pResource->GetResponseFile(pClient, nullptr, &haveAtLeastOne);
+	if (haveAtLeastOne) {
+		g_RecheckerHookchains.m_FileConsistencyFinal.callChain(nullptr, pClient);
+	}
+
+	// client is connected to putinserver, go execute cmd out buffer
+	Exec.ExecuteCommand(pClient);
+}
+
+const int clc_fileconsistency = 7;
+void HandleNetCommand(IRehldsHook_HandleNetCommand *chain, IGameClient *cl, int8 opcode)
+{
+	if (opcode == clc_fileconsistency) {
+		// clear temporary files of response
+		g_pResource->Clear(cl);
+	}
+
+	chain->callNext(cl, opcode);
 }
