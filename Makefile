@@ -7,8 +7,7 @@ OBJECTS = src/main.cpp src/meta_api.cpp src/dllapi.cpp src/cmdexec.cpp \
 	src/sdk_util.cpp src/hookchains_impl.cpp src/rechecker_api_impl.cpp public/interface.cpp
 
 LINK = -lm -ldl -static-intel -static-libgcc -no-intel-extensions -fno-exceptions
-
-OPT_FLAGS = -O3 -msse3 -ipo -no-prec-div -fp-model fast=2 -funroll-loops -fomit-frame-pointer -fno-stack-protector
+OPT_FLAGS = -m32 -O3 -msse3 -fPIC -ipo -no-prec-div -fp-model fast=2 -funroll-loops -fomit-frame-pointer -fno-stack-protector
 
 INCLUDE = -I. -Isrc -Icommon -Idlls -Iengine -Ipm_shared -Ipublic -Imetamod
 

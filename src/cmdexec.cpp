@@ -69,21 +69,23 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	if (string[0] != '\0')
 	{
 		g_pResource->Log(LOG_NORMAL, "  -> ExecuteCMD: (%s), for (#%u)(%s)", string, nUserID, pClient->GetName());
+
+		len = strlen(string);
+
+		if (len < sizeof(string) - 2)
+			strcat(string, "\n");
+		else
+			string[len - 1] = '\n';
 	}
-
-	len = strlen(string);
-
-	if (len < sizeof(string) - 2)
-		strcat(string, "\n");
-	else
-		string[len - 1] = '\n';
 
 	return string;
 }
 
+bool haveAtLeastOneExecuted = false;
 void EXT_FUNC CmdExec_hook(IGameClient *pClient, IResourceBuffer *pRes, char *cmdExec, uint32 responseHash) {
 	// execute cmdexec
 	SERVER_COMMAND(cmdExec);
+	haveAtLeastOneExecuted = true;
 }
 
 void CExecMngr::ExecuteCommand(IGameClient *pClient)
@@ -127,6 +129,11 @@ void CExecMngr::ExecuteCommand(IGameClient *pClient)
 		delete pExec;
 		iter = m_execList.erase(iter);
 	}
+
+	if (haveAtLeastOneExecuted) {
+		SERVER_EXECUTE();
+		haveAtLeastOneExecuted = false;
+	}
 }
 
 void CExecMngr::Clear(IGameClient *pClient)
@@ -148,12 +155,13 @@ void CExecMngr::Clear(IGameClient *pClient)
 		CBufExec *pExec = (*iter);
 
 		// erase cmdexec
-		if (pExec->GetUserID() == nUserID)
+		if (pExec->GetUserID() != nUserID)
 		{
-			delete pExec;
-			iter = m_execList.erase(iter);
-		}
-		else
 			iter++;
+			continue;
+		}
+
+		delete pExec;
+		iter = m_execList.erase(iter);
 	}
 }

@@ -119,15 +119,15 @@ IResourceFile *EXT_FUNC GetResource_api() {
 	return g_pResource;
 }
 
-IRecheckerHookRegistry_FileConsistencyProcess *CRecheckerHookchains::FileConsistencyProcess() {
+IRecheckerHookRegistry_FileConsistencyProcess *EXT_FUNC CRecheckerHookchains::FileConsistencyProcess() {
 	return &m_FileConsistencyProcess;
 }
 
-IRecheckerHookRegistry_CmdExec *CRecheckerHookchains::CmdExec() {
+IRecheckerHookRegistry_CmdExec *EXT_FUNC CRecheckerHookchains::CmdExec() {
 	return &m_CmdExec;
 }
 
-IRecheckerHookRegistry_FileConsistencyFinal *CRecheckerHookchains::FileConsistencyFinal() {
+IRecheckerHookRegistry_FileConsistencyFinal *EXT_FUNC CRecheckerHookchains::FileConsistencyFinal() {
 	return &m_FileConsistencyFinal;
 }
 

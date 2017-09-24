@@ -3,14 +3,13 @@
 #include "basetypes.h"
 #include "archtypes.h"
 
-#include <list>
 #include <vector>
-#include <cstring>		// strrchr
+#include <cstring>			// strrchr
 #include <algorithm>		// std::sort
 
-#include <time.h>		// time, localtime etc
+#include <time.h>			// time, localtime etc
 #include <extdll.h>
-#include <enginecallback.h>		// ALERT()
+#include <enginecallback.h>	// ALERT()
 
 #include <meta_api.h>
 #include <h_export.h>

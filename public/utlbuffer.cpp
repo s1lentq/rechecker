@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright  1996-2001, Valve LLC, All rights reserved. ============
 //
 // The copyright to the contents herein is the property of Valve, L.L.C.
 // The contents may be used and/or copied only with the written permission of
@@ -12,6 +12,12 @@
 //=============================================================================
 
 #include "precompiled.h"
+
+#include <stdio.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <limits.h>
 
 //-----------------------------------------------------------------------------
 // constructors

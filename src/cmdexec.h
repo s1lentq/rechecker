@@ -26,7 +26,7 @@ private:
 		uint32 m_ClientHash;
 	};
 
-	typedef std::list<CBufExec *> CBufExecList;
+	typedef std::vector<CBufExec *> CBufExecList;
 	CBufExecList m_execList;
 };
 
