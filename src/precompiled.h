@@ -36,12 +36,12 @@
 #include "engine_rehlds.h"
 #include "consistency.h"
 
+#include "main.h"
 #include "engine_hlds_api.h"
 #include "hookchains_impl.h"
 #include "rechecker_api.h"
 #include "rechecker_api_impl.h"
 
-#include "main.h"
 #include "resource.h"
 #include "cmdexec.h"
 
@@ -57,8 +57,3 @@
 	#define NORETURN __attribute__((noreturn))
 	#define WINAPI		/* */
 #endif // _WIN32
-
-extern void UTIL_Printf(const char *fmt, ...);
-extern void UTIL_LogPrintf(const char *fmt, ...);
-extern char *UTIL_VarArgs(const char *format, ...);
-extern void NORETURN Sys_Error(const char *error, ...);

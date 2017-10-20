@@ -17,7 +17,7 @@ CFLAGS = $(OPT_FLAGS)
 CFLAGS += -g0 -fvisibility=hidden -DNOMINMAX -fvisibility-inlines-hidden\
 	-DNDEBUG -Dlinux -D__linux__ -std=c++11 -shared -wd147,274 -fasm-blocks\
 	-Qoption,cpp,--treat_func_as_string_literal_cpp -fno-rtti\
-	-D_byteswap_ulong=_bswap -D_mkdir=mkdir -D_stricmp=strcasecmp
+	-D_byteswap_ulong=_bswap -D_vsnprintf=vsnprintf -D_mkdir=mkdir -D_stricmp=strcasecmp
 
 OBJ_LINUX := $(OBJECTS:%.c=$(BIN_DIR)/%.o)
 

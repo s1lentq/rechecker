@@ -51,7 +51,6 @@ int CResourceFile::CreateResourceList()
 	int nIndex = m_HeadResource.nIndex + 1;
 	int nCustomConsistency = 1;
 
-	std::vector<resource_t> sortList;
 	for (auto res : m_resourceList)
 	{
 		// Prevent duplicate of filenames
@@ -98,6 +97,7 @@ int CResourceFile::CreateResourceList()
 		}
 	}
 
+	std::vector<resource_t> sortList;
 	for (int i = 0; i < g_RehldsServerData->GetResourcesNum(); i++)
 	{
 		sortList.push_back(*g_RehldsServerData->GetResource(i));
