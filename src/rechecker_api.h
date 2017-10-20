@@ -14,17 +14,8 @@
 *    along with this program; if not, write to the Free Software Foundation,
 *    Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-*    In addition, as a special exception, the author gives permission to
-*    link the code of this program with the Half-Life Game Engine ("HL
-*    Engine") and Modified Game Libraries ("MODs") developed by Valve,
-*    L.L.C ("Valve").  You must obey the GNU General Public License in all
-*    respects for all of the code used other than the HL Engine and MODs
-*    from Valve.  If you modify this file, you may extend this exception
-*    to your version of the file, but you are not obligated to do so.  If
-*    you do not wish to do so, delete this exception statement from your
-*    version.
-*
 */
+
 #pragma once
 
 #include "hookchains.h"
@@ -45,16 +36,16 @@ enum ResourceType_e
 class IResourceBuffer;
 
 // FileConsistencyProcess hook
-typedef IVoidHookChain<IGameClient *, IResourceBuffer *, ResourceType_e, uint32> IRecheckerHook_FileConsistencyProcess;
-typedef IVoidHookChainRegistry<IGameClient *, IResourceBuffer *, ResourceType_e, uint32> IRecheckerHookRegistry_FileConsistencyProcess;
+typedef IHookChain<void, IGameClient *, IResourceBuffer *, ResourceType_e, uint32> IRecheckerHook_FileConsistencyProcess;
+typedef IHookChainRegistry<void, IGameClient *, IResourceBuffer *, ResourceType_e, uint32> IRecheckerHookRegistry_FileConsistencyProcess;
 
 // CmdExec hook
-typedef IVoidHookChain<IGameClient *, IResourceBuffer *, char *, uint32> IRecheckerHook_CmdExec;
-typedef IVoidHookChainRegistry<IGameClient *, IResourceBuffer *, char *, uint32> IRecheckerHookRegistry_CmdExec;
+typedef IHookChain<void, IGameClient *, IResourceBuffer *, char *, uint32> IRecheckerHook_CmdExec;
+typedef IHookChainRegistry<void, IGameClient *, IResourceBuffer *, char *, uint32> IRecheckerHookRegistry_CmdExec;
 
 // FileConsistencyFinal hook
-typedef IVoidHookChain<IGameClient *> IRecheckerHook_FileConsistencyFinal;
-typedef IVoidHookChainRegistry<IGameClient *> IRecheckerHookRegistry_FileConsistencyFinal;
+typedef IHookChain<void, IGameClient *> IRecheckerHook_FileConsistencyFinal;
+typedef IHookChainRegistry<void, IGameClient *> IRecheckerHookRegistry_FileConsistencyFinal;
 
 class IRecheckerHookchains {
 protected:

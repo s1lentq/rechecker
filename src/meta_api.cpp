@@ -1,10 +1,28 @@
+/*
+*
+*    This program is free software; you can redistribute it and/or modify it
+*    under the terms of the GNU General Public License as published by the
+*    Free Software Foundation; either version 2 of the License, or (at
+*    your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful, but
+*    WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+*    General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program; if not, write to the Free Software Foundation,
+*    Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*/
+
 #include "precompiled.h"
 
 plugin_info_t Plugin_info =
 {
 	META_INTERFACE_VERSION,
 	"Rechecker",
-	"2.4",
+	"2.5",
 	__DATE__,
 	"s1lent",
 	"http://www.dedicated-server.ru/",
@@ -41,12 +59,11 @@ C_DLLEXPORT int Meta_Attach(PLUG_LOADTIME now, META_FUNCTIONS *pFunctionTable, m
 		return FALSE;
 	}
 
-	gMetaFunctionTable.pfnGetEntityAPI2 = GetEntityAPI2;
 	gMetaFunctionTable.pfnGetEntityAPI2_Post = GetEntityAPI2_Post;
 
-	GET_HOOK_TABLES(PLID, NULL, &gMetaEntityInterface, NULL);
+	GET_HOOK_TABLES(PLID, nullptr, &gMetaEntityInterface, nullptr);
 
-	memcpy(pFunctionTable, &gMetaFunctionTable, sizeof(META_FUNCTIONS));
+	Q_memcpy(pFunctionTable, &gMetaFunctionTable, sizeof(META_FUNCTIONS));
 	return TRUE;
 }
 

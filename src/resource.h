@@ -1,11 +1,30 @@
+/*
+*
+*    This program is free software; you can redistribute it and/or modify it
+*    under the terms of the GNU General Public License as published by the
+*    Free Software Foundation; either version 2 of the License, or (at
+*    your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful, but
+*    WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+*    General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program; if not, write to the Free Software Foundation,
+*    Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*/
+
 #pragma once
 
-#define FILE_INI_RESOURCES		"resources.ini"
-#define MAX_CMD_LENGTH			128
-#define MAX_RANGE_CONSISTENCY	1024
+const int MAX_CMD_LENGTH        = 128;
+const int MAX_RANGE_CONSISTENCY = 1024;
 
-#define RESOURCE_INDEX_BITS		12
-#define RESOURCE_MAX_COUNT		(1 << RESOURCE_INDEX_BITS)
+const int RESOURCE_INDEX_BITS   = 12;
+const int RESOURCE_MAX_COUNT    = BIT(RESOURCE_INDEX_BITS);
+
+constexpr char *FILE_INI_RESOURCES  = "resources.ini";
 
 enum flag_type_log
 {
@@ -98,6 +117,7 @@ private:
 
 private:
 	// for temporary files of responses
+	void AddHeadResource();
 	void AddFileResponse(IGameClient *pSenderClient, char *filename, uint32 hash);
 	void LogPrepare();
 
@@ -111,14 +131,18 @@ private:
 	typedef std::vector<CResourceBuffer *> ResourceList;
 	typedef std::vector<CResponseBuffer *> ResponseList;
 
+	static constexpr char *m_TypeNames[] = { "none", "exists", "missing", "ignore", "hash_any" };
+	static constexpr char *m_HeadFileName = "delta.lst";
+
 	ResourceList m_resourceList;
 	ResponseList m_responseList;
 
+	resource_t m_HeadResource;
 	int m_ConsistencyNum;
 	uint32 m_PrevHash;
 
 	char m_PathDir[MAX_PATH];
-	char m_LogFilePath[MAX_PATH];	// log data
+	char m_LogFilePath[MAX_PATH];	// Log data
 
 	typedef std::vector<const char *> StringList;
 	static StringList m_StringsCache;

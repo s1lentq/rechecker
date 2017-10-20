@@ -1,7 +1,25 @@
+/*
+*
+*    This program is free software; you can redistribute it and/or modify it
+*    under the terms of the GNU General Public License as published by the
+*    Free Software Foundation; either version 2 of the License, or (at
+*    your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful, but
+*    WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+*    General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program; if not, write to the Free Software Foundation,
+*    Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*/
+
 #include "precompiled.h"
 
-cvar_t cv_mp_consistency = { "mp_consistency", "0", 0, 0.0f, NULL };
-cvar_t *pcv_consistency_old = NULL;
+cvar_t cv_mp_consistency = { "mp_consistency", "0", 0, 0.0f, nullptr };
+cvar_t *pcv_consistency_old = nullptr;
 
 void (*SV_AddResource)(resourcetype_t type, const char *name, int size, unsigned char flags, int index);
 qboolean (*SV_FileInConsistencyList)(const char *filename, consistency_t **ppconsist);
@@ -13,14 +31,14 @@ bool OnMetaAttach()
 
 	g_pResource = new CResourceFile();
 
-	// initialize resource config
+	// Initialize resource environment
 	g_pResource->Init();
 	Rechecker_Api_Init();
 
-	// if have already registered take it
+	// If have already registered take it
 	cvar_t *pcv_consistency_prev = g_engfuncs.pfnCVarGetPointer("mp_consistency_");
 
-	if (pcv_consistency_prev != NULL)
+	if (pcv_consistency_prev)
 	{
 		pcv_consistency_old = g_engfuncs.pfnCVarGetPointer("mp_consistency");
 
@@ -34,7 +52,7 @@ bool OnMetaAttach()
 	}
 	else
 	{
-		// set force cvar on own value and replacement of original
+		// Set force cvar on own value and replacement of original
 		// NOTE: in gamedll used this cvar not through a pointer thus we create own cvar for gamedll with default values
 		// so for engine set it the cvar values is 1.
 		pcv_consistency_old = g_engfuncs.pfnCVarGetPointer("mp_consistency");
@@ -50,13 +68,13 @@ bool OnMetaAttach()
 
 	g_engfuncs.pfnCvar_DirectSet(pcv_consistency_old, "1");
 
-	// to remove the old cvar of cvars list
+	// To remove the old cvar of cvars list
 	cvar_t *cvar_vars = g_RehldsFuncs->GetCvarVars();
-	for (cvar_t *var = cvar_vars, *prev = NULL; var != NULL; prev = var, var = var->next)
+	for (cvar_t *var = cvar_vars, *prev = nullptr; var; prev = var, var = var->next)
 	{
 		if (var == pcv_consistency_old)
 		{
-			if (prev != NULL)
+			if (prev)
 				prev->next = var->next;
 			else
 				cvar_vars = cvar_vars->next;
@@ -64,7 +82,7 @@ bool OnMetaAttach()
 		}
 	}
 
-	// register function from ReHLDS API
+	// Register function from ReHLDS API
 	g_RehldsHookchains->SV_DropClient()->registerHook(&SV_DropClient);
 	g_RehldsHookchains->SV_CheckConsistencyResponse()->registerHook(&SV_CheckConsistencyResponse);
 	g_RehldsHookchains->SV_TransferConsistencyInfo()->registerHook(&SV_TransferConsistencyInfo);
@@ -74,7 +92,7 @@ bool OnMetaAttach()
 	SV_AddResource = g_RehldsFuncs->SV_AddResource;
 	SV_FileInConsistencyList = g_RehldsFuncs->SV_FileInConsistencyList;
 
-	// go to attach
+	// Go to attach
 	return true;
 }
 
@@ -82,19 +100,19 @@ void OnMetaDetach()
 {
 	cvar_t *pcv_mp_consistency = g_engfuncs.pfnCVarGetPointer("mp_consistency");
 
-	// to restore the pointer address of a string
+	// To restore the pointer address of a string
 	const char *tempName = pcv_consistency_old->name;
 	pcv_consistency_old->name = cv_mp_consistency.name;
 	g_engfuncs.pfnCvar_DirectSet(pcv_consistency_old, pcv_mp_consistency->string);
 	pcv_mp_consistency->name = tempName;
 
-	// restore old cvar mp_consistency
+	// Restore old cvar mp_consistency
 	cvar_t *cvar_vars = g_RehldsFuncs->GetCvarVars();
-	for (cvar_t *var = cvar_vars, *prev = NULL; var != NULL; prev = var, var = var->next)
+	for (cvar_t *var = cvar_vars, *prev = nullptr; var; prev = var, var = var->next)
 	{
 		if (var == pcv_mp_consistency)
 		{
-			if (prev != NULL)
+			if (prev)
 				prev->next = pcv_consistency_old;
 			else
 				cvar_vars = pcv_consistency_old;
@@ -102,7 +120,7 @@ void OnMetaDetach()
 		}
 	}
 
-	// clear
+	// Clear
 	Exec.Clear();
 	delete g_pResource;
 
@@ -117,7 +135,7 @@ void OnMetaDetach()
 
 void ServerDeactivate_Post()
 {
-	// clear
+	// Clear
 	Exec.Clear();
 	g_pResource->Clear();
 
@@ -126,13 +144,13 @@ void ServerDeactivate_Post()
 
 void SV_DropClient(IRehldsHook_SV_DropClient *chain, IGameClient *pClient, bool crash, const char *string)
 {
-	// clear buffer cmdexec the client when was disconnected up to perform cmdexec
+	// Clear buffer cmdexec the client when was disconnected up to perform cmdexec
 	Exec.Clear(pClient);
 
-	// clear temporary files of response
+	// Clear temporary files of response
 	g_pResource->Clear(pClient);
 
-	// call next hook
+	// Call next hook
 	chain->callNext(pClient, crash, string);
 }
 
@@ -140,10 +158,10 @@ int SV_TransferConsistencyInfo(IRehldsHook_SV_TransferConsistencyInfo *chain)
 {
 	g_pResource->LoadResources();
 
-	// add to the resource
+	// Add to the resource
 	int nConsistency = g_pResource->CreateResourceList();
 
-	// returns the total number of consistency files
+	// Returns the total number of consistency files
 	return chain->callNext() + nConsistency;
 }
 
@@ -152,7 +170,7 @@ bool SV_CheckConsistencyResponse(IRehldsHook_SV_CheckConsistencyResponse *chain,
 	if (!g_pResource->FileConsistencyResponse(pSenderClient, resource, hash))
 		return false;
 
-	// call next hook and take return of values from original func
+	// Call next hook and take return of values from original func
 	return chain->callNext(pSenderClient, resource, hash);
 }
 
@@ -171,7 +189,7 @@ void SV_Spawn_f(IRehldsHook_SV_Spawn_f *chain)
 		g_RecheckerHookchains.m_FileConsistencyFinal.callChain(nullptr, pClient);
 	}
 
-	// client is connected to putinserver, go execute cmd out buffer
+	// Client is connected to putinserver, go execute cmd out buffer
 	Exec.ExecuteCommand(pClient);
 }
 
@@ -179,7 +197,7 @@ const int clc_fileconsistency = 7;
 void HandleNetCommand(IRehldsHook_HandleNetCommand *chain, IGameClient *cl, int8 opcode)
 {
 	if (opcode == clc_fileconsistency) {
-		// clear temporary files of response
+		// Clear temporary files of response
 		g_pResource->Clear(cl);
 	}
 

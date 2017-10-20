@@ -14,30 +14,21 @@
 *    along with this program; if not, write to the Free Software Foundation,
 *    Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-*    In addition, as a special exception, the author gives permission to
-*    link the code of this program with the Half-Life Game Engine ("HL
-*    Engine") and Modified Game Libraries ("MODs") developed by Valve,
-*    L.L.C ("Valve").  You must obey the GNU General Public License in all
-*    respects for all of the code used other than the HL Engine and MODs
-*    from Valve.  If you modify this file, you may extend this exception
-*    to your version of the file, but you are not obligated to do so.  If
-*    you do not wish to do so, delete this exception statement from your
-*    version.
-*
 */
+
 #pragma once
 
 // FileConsistencyProcess hook
-typedef IVoidHookChainImpl<IGameClient *, IResourceBuffer *, ResourceType_e, uint32> CRecheckerHook_FileConsistencyProcess;
-typedef IVoidHookChainRegistryImpl<IGameClient *, IResourceBuffer *, ResourceType_e, uint32> CRecheckerHookRegistry_FileConsistencyProcess;
+typedef IHookChainImpl<void, IGameClient *, IResourceBuffer *, ResourceType_e, uint32> CRecheckerHook_FileConsistencyProcess;
+typedef IHookChainRegistryImpl<void, IGameClient *, IResourceBuffer *, ResourceType_e, uint32> CRecheckerHookRegistry_FileConsistencyProcess;
 
 // CmdExec hook
-typedef IVoidHookChainImpl<IGameClient *, IResourceBuffer *, char *, uint32> CRecheckerHook_CmdExec;
-typedef IVoidHookChainRegistryImpl<IGameClient *, IResourceBuffer *, char *, uint32> CRecheckerHookRegistry_CmdExec;
+typedef IHookChainImpl<void, IGameClient *, IResourceBuffer *, char *, uint32> CRecheckerHook_CmdExec;
+typedef IHookChainRegistryImpl<void, IGameClient *, IResourceBuffer *, char *, uint32> CRecheckerHookRegistry_CmdExec;
 
 // FileConsistencyFinal hook
-typedef IVoidHookChainImpl<IGameClient *> CRecheckerHook_FileConsistencyFinal;
-typedef IVoidHookChainRegistryImpl<IGameClient *> CRecheckerHookRegistry_FileConsistencyFinal;
+typedef IHookChainImpl<void, IGameClient *> CRecheckerHook_FileConsistencyFinal;
+typedef IHookChainRegistryImpl<void, IGameClient *> CRecheckerHookRegistry_FileConsistencyFinal;
 
 class CRecheckerHookchains: public IRecheckerHookchains {
 public:
@@ -91,8 +82,8 @@ struct query_file_t
 
 inline query_file_t::query_file_t(const char *filename, const ResourceType_e flag, uint32 hash, query_func_t func, int uniqueId)
 {
-	this->filename = new char [strlen(filename) + 1];
-	strcpy(this->filename, filename);
+	this->filename = new char [Q_strlen(filename) + 1];
+	Q_strcpy(this->filename, filename);
 
 	this->flag = flag;
 	this->hash = hash;

@@ -467,6 +467,7 @@
     <ClInclude Include="..\public\rechecker_interfaces.h">
       <Filter>public</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\rechecker_api.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\parsemsg.cpp">

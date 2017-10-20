@@ -166,6 +166,7 @@
     <ClInclude Include="..\public\rechecker_interfaces.h" />
     <ClInclude Include="..\src\cmdexec.h" />
     <ClInclude Include="..\src\hookchains_impl.h" />
+    <ClInclude Include="..\src\rechecker_api.h" />
     <ClInclude Include="..\src\rechecker_api_impl.h" />
     <ClInclude Include="..\src\resource.h" />
     <ClInclude Include="..\src\engine_rehlds.h" />

@@ -1,3 +1,21 @@
+/*
+*
+*    This program is free software; you can redistribute it and/or modify it
+*    under the terms of the GNU General Public License as published by the
+*    Free Software Foundation; either version 2 of the License, or (at
+*    your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful, but
+*    WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+*    General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program; if not, write to the Free Software Foundation,
+*    Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*/
+
 #include "precompiled.h"
 
 CExecMngr Exec;
@@ -26,14 +44,15 @@ void StringReplace(char *src, const char *strold, const char *strnew)
 		return;
 
 	char *p = src;
-	int oldLen = strlen(strold), newLen = strlen(strnew);
+	int oldLen = Q_strlen(strold), newLen = Q_strlen(strnew);
 
-	while ((p = strstr(p, strold)) != nullptr)
+	while ((p = Q_strstr(p, strold)))
 	{
-		if (oldLen != newLen)
-			memmove(p + newLen, p + oldLen, strlen(p) - oldLen + 1);
+		if (oldLen != newLen) {
+			Q_memmove(p + newLen, p + oldLen, Q_strlen(p) - oldLen + 1);
+		}
 
-		memcpy(p, strnew, newLen);
+		Q_memcpy(p, strnew, newLen);
 		p += newLen;
 	}
 }
@@ -45,22 +64,21 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	const netadr_t *net;
 	static char string[256];
 
-	// check cmdexec is empty
+	// Check cmdexec is empty
 	if (!pResource->GetCmdExec())
 		return nullptr;
 
-	strncpy(string, pResource->GetCmdExec(), sizeof(string) - 1);
-	string[sizeof(string) - 1] = '\0';
+	Q_strlcpy(string, pResource->GetCmdExec());
 
 	net = pClient->GetNetChan()->GetRemoteAdr();
 	nUserID = g_engfuncs.pfnGetPlayerUserId(pClient->GetEdict());
 
-	// replace key values
+	// Replace key values
 	StringReplace(string, "[file_name]", pResource->GetFileName());
 	StringReplace(string, "[file_hash]", UTIL_VarArgs("%x", responseHash));
 	StringReplace(string, "[file_md5hash]", UTIL_VarArgs("%x", _byteswap_ulong(responseHash)));
 
-	// replace of templates for identification
+	// Replace of templates for identification
 	StringReplace(string, "[userid]", UTIL_VarArgs("#%u", nUserID));
 	StringReplace(string, "[steamid]", UTIL_VarArgs("%s", g_engfuncs.pfnGetPlayerAuthId(pClient->GetEdict())));
 	StringReplace(string, "[ip]", UTIL_VarArgs("%i.%i.%i.%i", net->ip[0], net->ip[1], net->ip[2], net->ip[3]));
@@ -70,7 +88,7 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	{
 		g_pResource->Log(LOG_NORMAL, "  -> ExecuteCMD: (%s), for (#%u)(%s)", string, nUserID, pClient->GetName());
 
-		len = strlen(string);
+		len = Q_strlen(string);
 
 		if (len < sizeof(string) - 2)
 			strcat(string, "\n");
@@ -83,7 +101,7 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 
 bool haveAtLeastOneExecuted = false;
 void EXT_FUNC CmdExec_hook(IGameClient *pClient, IResourceBuffer *pRes, char *cmdExec, uint32 responseHash) {
-	// execute cmdexec
+	// Execute cmdexec
 	SERVER_COMMAND(cmdExec);
 	haveAtLeastOneExecuted = true;
 }
@@ -96,8 +114,7 @@ void CExecMngr::ExecuteCommand(IGameClient *pClient)
 
 	while (iter != m_execList.end())
 	{
-		CBufExec *pExec = (*iter);
-
+		auto pExec = (*iter);
 		if (pExec->GetUserID() != nUserID)
 		{
 			iter++;
@@ -106,14 +123,13 @@ void CExecMngr::ExecuteCommand(IGameClient *pClient)
 
 		CResourceBuffer *pRes = pExec->GetResource();
 
-		// exit the loop if the client is out of the game
-		// TODO: Check me!
+		// Exit the loop if the client is out of the game
 		if (!pClient->IsConnected())
 		{
 			break;
 		}
 
-		// erase all cmdexec because have flag is break
+		// Erase all cmdexec because have flag is break
 		if (!bBreak)
 		{
 			char *cmdExec = GetExecCmdPrepare(pClient, pRes, pExec->GetClientHash());
@@ -125,7 +141,7 @@ void CExecMngr::ExecuteCommand(IGameClient *pClient)
 			bBreak = pRes->IsBreak();
 		}
 
-		// erase cmdexec
+		// Erase cmdexec
 		delete pExec;
 		iter = m_execList.erase(iter);
 	}
@@ -152,9 +168,9 @@ void CExecMngr::Clear(IGameClient *pClient)
 	auto iter = m_execList.begin();
 	while (iter != m_execList.end())
 	{
-		CBufExec *pExec = (*iter);
+		auto pExec = (*iter);
 
-		// erase cmdexec
+		// Erase cmdexec
 		if (pExec->GetUserID() != nUserID)
 		{
 			iter++;
