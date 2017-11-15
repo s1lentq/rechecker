@@ -98,6 +98,9 @@ bool OnMetaAttach()
 
 void OnMetaDetach()
 {
+	if (!g_RehldsFuncs)
+		return;
+
 	cvar_t *pcv_mp_consistency = g_engfuncs.pfnCVarGetPointer("mp_consistency");
 
 	// To restore the pointer address of a string
