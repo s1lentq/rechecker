@@ -468,6 +468,10 @@
       <Filter>public</Filter>
     </ClInclude>
     <ClInclude Include="..\src\rechecker_api.h" />
+    <ClInclude Include="..\common\ObjectList.h">
+      <Filter>sdk\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bswap.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\parsemsg.cpp">

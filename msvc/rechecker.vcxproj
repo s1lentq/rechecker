@@ -37,6 +37,7 @@
     <ClInclude Include="..\common\netadr.h" />
     <ClInclude Include="..\common\net_api.h" />
     <ClInclude Include="..\common\nowin.h" />
+    <ClInclude Include="..\common\ObjectList.h" />
     <ClInclude Include="..\common\parsemsg.h" />
     <ClInclude Include="..\common\particledef.h" />
     <ClInclude Include="..\common\pmtrace.h" />
@@ -164,6 +165,7 @@
     <ClInclude Include="..\public\FileSystem.h" />
     <ClInclude Include="..\public\rechecker_api.h" />
     <ClInclude Include="..\public\rechecker_interfaces.h" />
+    <ClInclude Include="..\src\bswap.h" />
     <ClInclude Include="..\src\cmdexec.h" />
     <ClInclude Include="..\src\hookchains_impl.h" />
     <ClInclude Include="..\src\rechecker_api.h" />
@@ -206,6 +208,7 @@
     <ProjectGuid>{9A72E8DC-7667-46C1-899D-1E8B939564D2}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>rechecker</RootNamespace>
+    <WindowsTargetPlatformVersion>7.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

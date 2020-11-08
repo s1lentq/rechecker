@@ -28,38 +28,24 @@
 
 #pragma once
 
-#include "IObjectContainer.h"
+#include "maintypes.h"
+#include "eiface.h"
 
-class ObjectList: public IObjectContainer {
-public:
-	EXT_FUNC void Init();
-	EXT_FUNC bool Add(void *newObject);
-	EXT_FUNC void *GetFirst();
-	EXT_FUNC void *GetNext();
+const int MAX_EXTENSION_DLL = 50;
 
-	ObjectList();
-	virtual ~ObjectList();
+typedef struct functiontable_s
+{
+	uint32 pFunction;
+	char *pFunctionName;
+} functiontable_t;
 
-	EXT_FUNC void Clear(bool freeElementsMemory = false);
-	EXT_FUNC int CountElements();
-	void *RemoveTail();
-	void *RemoveHead();
+typedef struct extensiondll_s
+{
+	void *lDLLHandle;
+	functiontable_t *functionTable;
+	int functionCount;
+} extensiondll_t;
 
-	bool AddTail(void *newObject);
-	bool AddHead(void *newObject);
-	EXT_FUNC bool Remove(void *object);
-	EXT_FUNC bool Contains(void *object);
-	EXT_FUNC bool IsEmpty();
-
-	typedef struct element_s {
-		struct element_s *prev;	// pointer to the last element or NULL
-		struct element_s *next;	// pointer to the next elemnet or NULL
-		void *object;		// the element's object
-	} element_t;
-
-protected:
-	element_t *m_head;    // first element in list
-	element_t *m_tail;    // last element in list
-	element_t *m_current; // current element in list
-	int m_number;
-};
+typedef void(*ENTITYINIT)(struct entvars_s *);
+typedef void(*DISPATCHFUNCTION)(struct entvars_s *, void *);
+typedef void(*FIELDIOFUNCTION)(SAVERESTOREDATA *, const char *, void *, TYPEDESCRIPTION *, int);

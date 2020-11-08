@@ -73,6 +73,9 @@ public:
 	virtual bool GetLoopback() = 0;
 	virtual struct usercmd_s *GetLastCmd() = 0;
 
+	virtual bool IsProxy() = 0;
+	virtual void SetProxy(bool proxy) = 0;
+
 	// this must be the last virtual function in class
 #ifdef REHLDS_SELF
 	virtual client_t* GetClient() = 0;
@@ -104,6 +107,7 @@ public:
 	virtual IGameClient* GetClient(int id) = 0;
 	virtual client_t* GetClient_t(int id) = 0;
 	virtual int GetIndexOfClient_t(client_t* client) = 0;
+	virtual int GetMaxClientsLimit() = 0;
 };
 
 class IRehldsServerData {
@@ -129,4 +133,5 @@ public:
 	virtual void SetName(const char* name) = 0;
 	virtual class ISteamGameServer *GetSteamGameServer() = 0;
 	virtual struct netadr_s *GetNetFrom() = 0;
+	virtual double GetOldTime() = 0;
 };

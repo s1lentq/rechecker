@@ -21,6 +21,9 @@
 CResourceFile *g_pResource = nullptr;
 CResourceFile::StringList CResourceFile::m_StringsCache;
 
+const char *CResourceFile::m_TypeNames[] = { "none", "exists", "missing", "ignore", "hash_any" };
+const char *CResourceFile::m_HeadFileName = "delta.lst";
+
 cvar_t cv_rch_log = { "rch_log", "0", 0, 0.0f, nullptr };
 cvar_t *pcv_rch_log = nullptr;
 
@@ -155,10 +158,10 @@ void CResourceFile::AddHeadResource()
 {
 	Q_strlcpy(m_HeadResource.szFileName, m_HeadFileName);
 
-	m_HeadResource.type = t_decal;
-	m_HeadResource.ucFlags = RES_CHECKFILE;
+	m_HeadResource.type          = t_decal;
+	m_HeadResource.ucFlags       = RES_CHECKFILE;
 	m_HeadResource.nDownloadSize = 0;
-	m_HeadResource.nIndex = RESOURCE_MAX_COUNT - 1;
+	m_HeadResource.nIndex        = RESOURCE_MAX_COUNT - 1;
 }
 
 void CResourceFile::Clear(IGameClient *pClient)
@@ -211,7 +214,7 @@ void CResourceFile::Log(flag_type_log type, const char *fmt, ...)
 	FILE *fp;
 	time_t td;
 	tm *lt;
-	char *file;
+	const char *file;
 	char dateLog[64];
 	bool bFirst = false;
 
@@ -219,7 +222,6 @@ void CResourceFile::Log(flag_type_log type, const char *fmt, ...)
 		return;
 
 	fp = fopen(m_LogFilePath, "r");
-
 	if (fp)
 	{
 		bFirst = true;
@@ -593,7 +595,7 @@ const char *CResourceFile::GetNextToken(char **pbuf)
 	return res;
 }
 
-CResourceBuffer *CResourceFile::Add(const char *filename, char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak)
+CResourceBuffer *CResourceFile::Add(const char *filename, const char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak)
 {
 	auto nRes = new CResourceBuffer(filename, cmdExec, flag, hash, line, bBreak);
 
@@ -645,7 +647,7 @@ void CResourceFile::PrintLog(IGameClient *pSenderClient, CResourceBuffer *res, R
 	flag_type_log type = (typeFind == RES_TYPE_IGNORE) ? LOG_DETAILED : LOG_NORMAL;
 	Log(type, "  -> file: (%s), exphash: (%x), got: (%x), typeFind: (%s), prevhash: (%x), (#%u)(%s), prevfile: (%s), findathash: (%s), md5hex: (%x), ex: (%d)",
 		res->GetFileName(), res->GetFileHash(), hash, m_TypeNames[typeFind], m_PrevHash, g_engfuncs.pfnGetPlayerUserId(pSenderClient->GetEdict()),
-		pSenderClient->GetName(), FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), _byteswap_ulong(hash), res->IsAddEx());
+		pSenderClient->GetName(), FindFilenameOfHash(m_PrevHash), FindFilenameOfHash(hash), bswap_32(hash), res->IsAddEx());
 }
 
 IResourceBuffer *CResourceFile::GetResourceFile(const char *filename)
@@ -802,7 +804,7 @@ void CResourceFile::ClearStringsCache()
 	m_StringsCache.clear();
 }
 
-CResourceBuffer::CResourceBuffer(const char *filename, char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak)
+CResourceBuffer::CResourceBuffer(const char *filename, const char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak)
 {
 	m_FileName = CResourceFile::DuplicateString(filename);
 	m_CmdExec = (cmdExec[0] != '\0') ? CResourceFile::DuplicateString(cmdExec) : nullptr;

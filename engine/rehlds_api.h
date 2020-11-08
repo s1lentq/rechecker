@@ -26,6 +26,7 @@
 *
 */
 #pragma once
+
 #include "archtypes.h"
 #include "cmd_rehlds.h"
 #include "rehlds_interfaces.h"
@@ -33,9 +34,11 @@
 #include "FlightRecorder.h"
 #include "interface.h"
 #include "model.h"
+#include "ObjectList.h"
+#include "pr_dlls.h"
 
 #define REHLDS_API_VERSION_MAJOR 3
-#define REHLDS_API_VERSION_MINOR 0
+#define REHLDS_API_VERSION_MINOR 8
 
 //Steam_NotifyClientConnect hook
 typedef IHookChain<qboolean, IGameClient*, const void*, unsigned int> IRehldsHook_Steam_NotifyClientConnect;
@@ -189,6 +192,22 @@ typedef IHookChainRegistry<int, enum sv_delta_s, IGameClient *, struct packet_en
 typedef IHookChain<bool, edict_t *, IGameClient *, int, const char*, float, float, int, int, int, const float*> IRehldsHook_SV_EmitSound2;
 typedef IHookChainRegistry<bool, edict_t *, IGameClient *, int, const char*, float, float, int, int, int, const float*> IRehldsHookRegistry_SV_EmitSound2;
 
+//CreateFakeClient hook
+typedef IHookChain<edict_t *, const char *> IRehldsHook_CreateFakeClient;
+typedef IHookChainRegistry<edict_t *, const char *> IRehldsHookRegistry_CreateFakeClient;
+
+//SV_CheckConnectionLessRateLimits
+typedef IHookChain<bool, netadr_t &, const uint8_t *, int> IRehldsHook_SV_CheckConnectionLessRateLimits;
+typedef IHookChainRegistry<bool, netadr_t &, const uint8_t *, int> IRehldsHookRegistry_SV_CheckConnectionLessRateLimits;
+
+//SV_Frame hook
+typedef IVoidHookChain<> IRehldsHook_SV_Frame;
+typedef IVoidHookChainRegistry<> IRehldsHookRegistry_SV_Frame;
+
+//SV_ShouldSendConsistencyList hook
+typedef IHookChain<bool, IGameClient *, bool> IRehldsHook_SV_ShouldSendConsistencyList;
+typedef IHookChainRegistry<bool, IGameClient *, bool> IRehldsHookRegistry_SV_ShouldSendConsistencyList;
+
 class IRehldsHookchains {
 public:
 	virtual ~IRehldsHookchains() { }
@@ -231,6 +250,10 @@ public:
 	virtual IRehldsHookRegistry_SV_Spawn_f* SV_Spawn_f() = 0;
 	virtual IRehldsHookRegistry_SV_CreatePacketEntities* SV_CreatePacketEntities() = 0;
 	virtual IRehldsHookRegistry_SV_EmitSound2* SV_EmitSound2() = 0;
+	virtual IRehldsHookRegistry_CreateFakeClient* CreateFakeClient() = 0;
+	virtual IRehldsHookRegistry_SV_CheckConnectionLessRateLimits* SV_CheckConnectionLessRateLimits() = 0;
+	virtual IRehldsHookRegistry_SV_Frame* SV_Frame() = 0;
+	virtual IRehldsHookRegistry_SV_ShouldSendConsistencyList* SV_ShouldSendConsistencyList() = 0;
 };
 
 struct RehldsFuncs_t {
@@ -282,6 +305,65 @@ struct RehldsFuncs_t {
 	bool(*SV_EmitSound2)(edict_t *entity, IGameClient *receiver, int channel, const char *sample, float volume, float attenuation, int flags, int pitch, int emitFlags, const float *pOrigin);
 	void(*SV_UpdateUserInfo)(IGameClient *pGameClient);
 	bool(*StripUnprintableAndSpace)(char *pch);
+	void(*Cmd_RemoveCmd)(const char *cmd_name);
+	void(*GetCommandMatches)(const char *string, ObjectList *pMatchList);
+	bool(*AddExtDll)(void *hModule);
+	void(*AddCvarListener)(const char *var_name, cvar_callback_t func);
+	void(*RemoveExtDll)(void *hModule);
+	void(*RemoveCvarListener)(const char *var_name, cvar_callback_t func);
+	ENTITYINIT(*GetEntityInit)(char *pszClassName);
+
+	// Read functions
+	int(*MSG_ReadChar)();
+	int(*MSG_ReadByte)();
+	int(*MSG_ReadLong)();
+	float(*MSG_ReadFloat)();
+	char*(*MSG_ReadString)();
+	char*(*MSG_ReadStringLine)();
+	float(*MSG_ReadAngle)();
+	float(*MSG_ReadHiresAngle)();
+	void(*MSG_ReadUsercmd)(struct usercmd_s *to, struct usercmd_s *from);
+	float(*MSG_ReadCoord)();
+	void(*MSG_ReadVec3Coord)(sizebuf_t *sb, vec3_t fa);
+
+	// Read bit functions
+	bool(*MSG_IsBitReading)();
+	void(*MSG_StartBitReading)(sizebuf_t *buf);
+	void(*MSG_EndBitReading)(sizebuf_t *buf);
+	uint32(*MSG_PeekBits)(int numbits);
+	int(*MSG_ReadOneBit)();
+	uint32(*MSG_ReadBits)(int numbits);
+	int(*MSG_ReadSBits)(int numbits);
+	float(*MSG_ReadBitCoord)();
+	void(*MSG_ReadBitVec3Coord)(vec_t *fa);
+	float(*MSG_ReadBitAngle)(int numbits);
+	int(*MSG_ReadBitData)(void *dest, int length);
+	char*(*MSG_ReadBitString)();
+	int(*MSG_CurrentBit)();
+
+	// Write functions
+	void(*MSG_WriteLong)(sizebuf_t *sb, int c);
+	void(*MSG_WriteFloat)(sizebuf_t *sb, float f);
+	void(*MSG_WriteAngle)(sizebuf_t *sb, float f);
+	void(*MSG_WriteHiresAngle)(sizebuf_t *sb, float f);
+	void(*MSG_WriteUsercmd)(sizebuf_t *sb, struct usercmd_s *to, struct usercmd_s *from);
+	void(*MSG_WriteCoord)(sizebuf_t *sb, float f);
+	void(*MSG_WriteVec3Coord)(sizebuf_t *sb, const vec3_t fa);
+
+	// Write bit functions
+	bool(*MSG_IsBitWriting)();
+	void(*MSG_WriteOneBit)(int nValue);
+	void(*MSG_WriteSBits)(uint32 data, int numbits);
+	void(*MSG_WriteBitCoord)(float f);
+	void(*MSG_WriteBitAngle)(float fAngle, int numbits);
+	void(*MSG_WriteBitData)(void *src, int length);
+	void(*MSG_WriteBitString)(const char *p);
+	void(*SZ_Write)(sizebuf_t *buf, const void *data, int length);
+	void(*SZ_Print)(sizebuf_t *buf, const char *data);
+	void(*SZ_Clear)(sizebuf_t *buf);
+	void(*MSG_BeginReading)();
+	double(*GetHostFrameTime)();
+	struct cmd_function_s *(*GetFirstCmdFunctionHandle)();
 };
 
 class IRehldsApi {

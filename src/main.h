@@ -19,6 +19,7 @@
 #pragma once
 
 #include "consistency.h"
+#include "bswap.h"
 
 void UTIL_Printf(const char *fmt, ...);
 void UTIL_LogPrintf(const char *fmt, ...);
@@ -26,6 +27,7 @@ char *UTIL_VarArgs(const char *format, ...);
 void NORETURN Sys_Error(const char *error, ...);
 
 void SV_DropClient(IRehldsHook_SV_DropClient *chain, IGameClient *pClient, bool crash, const char *string);
+bool SV_ShouldSendConsistencyList(IRehldsHook_SV_ShouldSendConsistencyList *chain, IGameClient *client, bool forceConsistency);
 bool SV_CheckConsistencyResponse(IRehldsHook_SV_CheckConsistencyResponse *chain, IGameClient *pSenderClient, resource_t *resource, uint32 hash);
 int SV_TransferConsistencyInfo(IRehldsHook_SV_TransferConsistencyInfo *chain);
 void SV_Spawn_f(IRehldsHook_SV_Spawn_f *chain);

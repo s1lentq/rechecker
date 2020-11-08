@@ -24,7 +24,7 @@ const int MAX_RANGE_CONSISTENCY = 1024;
 const int RESOURCE_INDEX_BITS   = 12;
 const int RESOURCE_MAX_COUNT    = BIT(RESOURCE_INDEX_BITS);
 
-constexpr char *FILE_INI_RESOURCES  = "resources.ini";
+constexpr const char *FILE_INI_RESOURCES  = "resources.ini";
 
 enum flag_type_log
 {
@@ -47,7 +47,7 @@ enum arg_type_e
 class CResourceBuffer: public IResourceBuffer
 {
 public:
-	CResourceBuffer(const char *filename, char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak);
+	CResourceBuffer(const char *filename, const char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak);
 
 	uint32 GetFileHash() const { return m_FileHash; };
 	ResourceType_e GetFileFlag() const { return m_Flag; };
@@ -131,8 +131,8 @@ private:
 	typedef std::vector<CResourceBuffer *> ResourceList;
 	typedef std::vector<CResponseBuffer *> ResponseList;
 
-	static constexpr char *m_TypeNames[] = { "none", "exists", "missing", "ignore", "hash_any" };
-	static constexpr char *m_HeadFileName = "delta.lst";
+	static const char *m_TypeNames[];
+	static const char *m_HeadFileName;
 
 	ResourceList m_resourceList;
 	ResponseList m_responseList;
@@ -154,7 +154,7 @@ public:
 	const char *FindFilenameOfHash(uint32 hash);
 	int GetConsistencyNum() const { return m_ConsistencyNum; }
 	uint32 GetPrevHash() const { return m_PrevHash; }
-	CResourceBuffer *Add(const char *filename, char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak);
+	CResourceBuffer *Add(const char *filename, const char *cmdExec, ResourceType_e flag, uint32 hash, int line, bool bBreak);
 };
 
 extern CResourceFile *g_pResource;

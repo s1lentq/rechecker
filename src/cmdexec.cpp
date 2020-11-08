@@ -76,9 +76,10 @@ char *GetExecCmdPrepare(IGameClient *pClient, CResourceBuffer *pResource, uint32
 	// Replace key values
 	StringReplace(string, "[file_name]", pResource->GetFileName());
 	StringReplace(string, "[file_hash]", UTIL_VarArgs("%x", responseHash));
-	StringReplace(string, "[file_md5hash]", UTIL_VarArgs("%x", _byteswap_ulong(responseHash)));
+	StringReplace(string, "[file_md5hash]", UTIL_VarArgs("%x", bswap_32(responseHash)));
 
 	// Replace of templates for identification
+	StringReplace(string, "[id]", UTIL_VarArgs("%i", pClient->GetId() + 1));
 	StringReplace(string, "[userid]", UTIL_VarArgs("#%u", nUserID));
 	StringReplace(string, "[steamid]", UTIL_VarArgs("%s", g_engfuncs.pfnGetPlayerAuthId(pClient->GetEdict())));
 	StringReplace(string, "[ip]", UTIL_VarArgs("%i.%i.%i.%i", net->ip[0], net->ip[1], net->ip[2], net->ip[3]));
@@ -135,7 +136,7 @@ void CExecMngr::ExecuteCommand(IGameClient *pClient)
 			char *cmdExec = GetExecCmdPrepare(pClient, pRes, pExec->GetClientHash());
 			if (cmdExec && cmdExec[0] != '\0')
 			{
-				g_RecheckerHookchains.m_CmdExec.callChain(CmdExec_hook, pClient, pRes, cmdExec, _byteswap_ulong(pExec->GetClientHash()));
+				g_RecheckerHookchains.m_CmdExec.callChain(CmdExec_hook, pClient, pRes, cmdExec, bswap_32(pExec->GetClientHash()));
 			}
 
 			bBreak = pRes->IsBreak();

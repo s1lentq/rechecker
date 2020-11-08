@@ -133,7 +133,7 @@ extern mBOOL dlclose_handle_invalid;
 		dlclose_handle_invalid = mFALSE;
 		return(dlclose(handle));
 	}
-	inline char* DLERROR(void) {
+	inline const char* DLERROR(void) {
 		if (dlclose_handle_invalid)
 			return("Invalid handle.");
 		return(dlerror());
@@ -159,8 +159,8 @@ extern mBOOL dlclose_handle_invalid;
 	}
 	// Windows doesn't provide a function corresponding to dlerror(), so
 	// we make our own.
-	char *str_GetLastError(void);
-	inline char* DLERROR(void) {
+	const char *str_GetLastError(void);
+	inline const char* DLERROR(void) {
 		if (dlclose_handle_invalid)
 			return("Invalid handle.");
 		return(str_GetLastError());
